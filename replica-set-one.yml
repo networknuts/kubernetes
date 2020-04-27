@@ -1,0 +1,47 @@
+# replica-set-one.yml
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: nnwebserver
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nnwebserver
+    spec:
+      containers:
+        - name: nnwebserver
+          image: lovelearnlinux/webserver:v1
+          livenessProbe:
+            exec:
+              command:
+              - cat 
+              - /var/www/html/index.html
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: #request means minimum
+              cpu: "500m"
+              memory: "128Mi"
+            limits: #limits means maximum
+              cpu: "1000m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+
+# IMPORTANT POINTS #
+#to apply - kubectl apply -f replica-set-one.yml
+#to inspect - kubectl get replicaset
+#to inspect a pod for replicaset - kubectl get pod <pod-name> -o yaml
+#to find pods for a replicaset - kubectl get pods -l app=nnwebserver 
+#to scale replicaset - kubectl scale replicasets nnwebserver --replicas=4
+#to autoscale replicaset based on CPU consumption:
+#    kubectl autoscale rs nnwebserver --min=2 --max=5 --cpu-percent=80
+#to get horizontal pod autoscaling details - kubectl get hpa
+#to delete replicaset - kubectl delete rs nnwebserver
+#
