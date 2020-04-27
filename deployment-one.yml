@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nnwebserver
+spec:
+  selector:
+    matchLabels:
+      run: nnwebserver
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+#uncomment below two lines when you update to a new image
+#      annotations:
+#        kubernetes.io/change-cause: "updated to new version"
+      labels:
+        run: nnwebserver
+    spec:
+      containers:
+        - name: nnwebserver
+#for checking rolling updates first try with
+#         image: lovelearnlinux/webserver:v1
+#create deployment and check it, then change 
+#         image: lovelearnlinux/webserver:v2
+          image: lovelearnlinux/webserver:v2
+          livenessProbe:
+            exec:
+              command:
+              - cat 
+              - /var/www/html/index.html
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: #request means minimum
+              cpu: "500m"
+              memory: "128Mi"
+            limits: #limits means maximum
+              cpu: "1000m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+
+# IMPORTANT POINTS #
+#to apply - kubectl create -f deployment-one.yml
+#to inspect - kubectl get deployment
+#to describe - kubectl describe deployment nnwebserver
+#to inspect replicaset created by this deployment -  kubectl get rs --selector=run=nnwebserver
+#to manually scale the deployment - kubectl scale deployment nnwebserver --replicas=3
+#NOW try decreasing the rs using - kubectl scale rs <rs-name> --replicas=1
+#Get the value of rs again using - kubectl get rs --selector=run-nnwebserver
+#NOTICE the relationship between deployment and replicaset
+#to get a YAML format of your deployment, in detail:
+#   kubectl get deployment nnwebserver --export -o yaml > nnwebserver-deployment.yml
+# to get rollout status - kubectl rollout status deployment nnwebserver
+# to pause deployment - kubectl rollout pause deployment nnwebserver
+# to resume deployment - kubectl rollout resume deployment nnwebserver
+# to get deployment history - kubectl rollout history deployment nnwebserver
+# to delete deployment - kubectl delete deployment nnwebserver
+# whenever updating deployment use - kubectl apply -f deployment-one.yml
+#
