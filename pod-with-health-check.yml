@@ -1,0 +1,33 @@
+# pod-with-health-check.yml
+apiVersion: v1
+
+kind: Pod
+
+metadata:
+  name: nnwebserver
+
+spec:
+  containers:
+    - name: nnwebserver
+      image: lovelearnlinux/webserver:v1
+      livenessProbe:
+        exec:
+          command:
+          - cat 
+          - /var/www/html/index.html
+        initialDelaySeconds: 10
+        timeoutSeconds: 3
+        periodSeconds: 20
+        failureThreshold: 3
+      resources:
+        requests: #request means minimum
+          cpu: "500m"
+          memory: "128Mi"
+        limits: #limits means maximum
+          cpu: "1000m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+
