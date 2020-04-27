@@ -1,0 +1,23 @@
+# pod-with-resource-limits.yml
+apiVersion: v1
+
+kind: Pod
+
+metadata:
+  name: nnwebserver
+
+spec:
+  containers:
+    - name: nnwebserver
+      image: lovelearnlinux/webserver:v1
+      resources:
+        requests: #request means minimum
+          cpu: "500m"
+          memory: "128Mi"
+        limits: #limits means maximum
+          cpu: "1000m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
