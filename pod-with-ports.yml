@@ -1,0 +1,16 @@
+# pod-with-ports.yml
+apiVersion: v1
+
+kind: Pod
+
+metadata:
+  name: nnwebserver
+
+spec:
+  containers:
+    - name: nnwebserver
+      image: lovelearnlinux/webserver:v1
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
