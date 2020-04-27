@@ -1,0 +1,45 @@
+#log-agent-daemon-set.yml
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  labels:
+    app: fluentd
+spec:
+  template:
+    metadata:
+      labels:
+        app: fluentd
+    spec:
+      containers:
+      - name: fluentd
+        image: fluent/fluentd:v0.14.10
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+
+
+# IMPORTANT POINTS
+# to create daemon set - kubectl create -f log-agent-daemon-set.yml
+# to check daemon set - kubectl get ds
+# to describe daemon set -  kubectl describe ds <name-of-daemon-set>
+# for updating daemon sets the same "rolling updates" policies will apply
+# to delete daemon set - kubectl delete ds <name-of-daemon-set>
+#
