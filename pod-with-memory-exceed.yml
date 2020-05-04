@@ -1,8 +1,10 @@
+# pod-with-memory-exceed.yml
+
 apiVersion: v1
 kind: Pod
 metadata:
   name: nnappone
-  namespace: default
+  namespace: learning
   labels:
    app: nnappone
 spec:
@@ -16,3 +18,29 @@ spec:
           memory: "150Mi"
       command: ["stress"]
       args: ["--vm", "1", "--vm-bytes", "275M", "--vm-hang", "1"]
+
+
+#
+# here using the stress utility and using args
+# we are trying to claim 275MiB of memory while
+# running the pod. Which should fail, as its beyond
+# the max limit of 250MiB
+#
+# OOM killer (Out Of Memory) will be activated and
+# kill the pod
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-memory-exceed.yml
+#
+# check the pod
+# kubectl get pods
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

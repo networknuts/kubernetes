@@ -1,0 +1,34 @@
+# namespace-memory-limit.yml
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: memory-limit-range
+  namespace: learning
+spec:
+  limits:
+  - default:
+      memory: 500Mi
+    defaultRequest:
+      memory: 250Mi
+    type: Container
+
+#
+# create namespace first using -
+# kubectl create namespace learning
+#
+# apply it using - 
+# kubectl apply -f namespace-memory-limit.yml
+# 
+# check limits -
+# kubectl get limitranges --namespace=learning
+#
+# get details of limits -
+# kubectl describe limitranges memory-limit-range --namespace=learning
+# 
+# delete the memory limits - 
+# kubectl delete limitranges memory-limit-range --namespace=learning
+# 
+# delete namespace -
+# kubectl delete namespace learning
+#

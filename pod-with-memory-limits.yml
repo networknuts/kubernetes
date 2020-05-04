@@ -1,8 +1,10 @@
+# pod-with-memory-limits.yml
+#
 apiVersion: v1
 kind: Pod
 metadata:
   name: nnappone
-  namespace: default
+  namespace: learning
   labels:
    app: nnappone
 spec:
@@ -16,3 +18,27 @@ spec:
           memory: "150Mi"
       command: ["stress"]
       args: ["--vm", "1", "--vm-bytes", "175M", "--vm-hang", "1"]
+
+
+#
+# here using the stress utility and using args
+# we are trying to claim 175MiB of memory while
+# running the pod. Which should be success, as its 
+#  within the max limit of 250MiB
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-memory-limits.yml
+#
+# check the pod
+# kubectl get pods
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#
+#

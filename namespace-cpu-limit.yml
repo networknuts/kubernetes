@@ -1,0 +1,34 @@
+# namespace-cpu-limit.yml
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-limit-range
+  namespace: learning
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.4
+    type: Container
+
+#
+# create namespace first using -
+# kubectl create namespace learning
+#
+# apply it using - 
+# kubectl apply -f namespace-cpu-limit.yml
+# 
+# check limits -
+# kubectl get limitranges --namespace=learning
+#
+# get details of limits -
+# kubectl describe limitranges cpu-limit-range --namespace=learning
+#
+# delete cpu limits - 
+# kubectl delete limitranges cpu-limit-range --namespace=learning
+#
+# delete namespace -
+# kubectl delete namespace learning
+#

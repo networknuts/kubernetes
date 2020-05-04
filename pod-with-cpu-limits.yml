@@ -1,8 +1,10 @@
+# pod-with-cpu-limits.yml
+
 apiVersion: v1
 kind: Pod
 metadata:
   name: nnappone
-  namespace: default
+  namespace: learning
   labels:
    app: nnappone
 spec:
@@ -14,3 +16,24 @@ spec:
           cpu: "1"
         requests:
           cpu: "0.5"
+
+#
+# Pod will start with 0.5 cpu share and can 
+# go upto 1 cpu. Well within the permissible
+# limits.
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-cpu-limits.yml
+#
+# check the pod
+# kubectl get pods
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#
