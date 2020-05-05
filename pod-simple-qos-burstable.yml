@@ -1,0 +1,46 @@
+# pod-simple-qos-burstable.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "250Mi"
+        requests:
+          memory: "150Mi"
+#
+# Creating a simple pod. Which has apache
+# configured inside it. There are memory request
+# and memory limits restrictions. So pod will 
+# initially be given 150Mi of physical memory, but
+# it can burst upto 250Mi. If no other default limits
+# are applied. So kubernetes can burst memory, if 
+# needed. 
+#
+# QoS = Burstable
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-simple-qos-burstable.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# 
+# Check the "QoS Class" value. 
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

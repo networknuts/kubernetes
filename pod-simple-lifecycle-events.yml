@@ -1,0 +1,49 @@
+# pod-simple-lifecycle-events.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      lifecycle:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "useradd networknuts -p redhat"]
+        preStop:
+          exec:
+            command: ["/bin/sh","-c","rm -rf /home/networknuts; userdel networknuts"]
+#
+# Creating a simple pod. Which has apache
+# configured inside it. The container inside the
+# pod has handlers for the postStart and preStop events.
+#
+# postStart - postStart event is called immediately 
+# after the Container is created 
+#
+# preStop - preStop event is called immediately
+# before the Container is terminated
+#
+# Create namespace learning -
+# kubectl create namespace learning
+#
+# Run the pod
+# kubectl create -f pod-simple-lifecycle-events.yml
+#
+# Check the pod
+# kubectl get pods --namespace=learning
+#
+# Go inside the pod to check user - networknuts
+# kubectl exec -it nnappone --namespace=learning -- /bin/bash
+# 
+# Check inside /etc/passwd and you will find user - networknuts
+# tail /etc/passwd
+# 
+# Delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

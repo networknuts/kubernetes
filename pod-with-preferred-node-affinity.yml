@@ -1,0 +1,64 @@
+# pod-with-preferred-node-affinity.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sku
+            operator: In
+            values:
+            - small
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "500Mi"
+        requests:
+          memory: "300Mi"
+
+#
+# This means that the pod will PREFER to get
+# scheduled on a node that has a sku=small label.
+#
+# First label one/more nodes with some kind of tag
+# we are classifying our nodes as small, medium &
+# heavy and the label name is "sku" value can be
+# "small / medium / heavy"
+#
+# First label nodeone.example.com as small:
+#
+# kubectl label nodes nodeone.example.com sku=small
+#
+# Confirm for the labels on nodes using:
+#
+# kubectl get nodes --show-labels 
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-preferred-node-affinity.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning --output=wide
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# check for the node where its running, it should be
+# PROBABLY on nodes with label "sku=small"
+# 
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

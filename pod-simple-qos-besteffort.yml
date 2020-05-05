@@ -1,0 +1,39 @@
+# pod-simple-qos-besteffort.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+#
+# Creating a simple pod. Which has apache
+# configured inside it. There are no cpu or
+# memory limits applied on pod. So kubernetes
+# cluster will try to give the best resources
+# available. But cannot guarantee any number.
+#
+# QoS = Best Effort 
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-simple-qos-besteffort.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# 
+# Check the "QoS Class" value. 
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

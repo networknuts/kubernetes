@@ -1,0 +1,33 @@
+# namespace-pod-quota.yml
+#
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pod-quota
+  namespace: learning
+spec:
+  hard:
+    pods: "4"
+
+#
+# We are applying quota on number of pods 
+# that can run inside a namespace. So if
+# total number of running pods increases
+# above 4, it will fail with quota error.
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# apply the quota on number of pods
+# kubectl apply -f namespace-pod-quota.yml
+#
+# check the resource quota
+# kubectl get resourcequotas --namespace=learning
+#
+# get details about resource quota
+# kubectl describe resourcequotas pod-quota --namespace=learning
+#
+# delete resource quota
+# kubectl delete resourcequotas pod-quota --namespace=learning
+#
+

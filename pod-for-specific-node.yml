@@ -1,0 +1,43 @@
+# pod-for-specific-node.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  nodeName: nodeone.example.com #this will assign pod to specific node
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "500Mi"
+        requests:
+          memory: "300Mi"
+
+
+#
+# We are scheduling our pod to run on a SPECIFIC
+# node - nodeone.example.com using
+# "nodeName" setting
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-for-specific-node.yml
+#
+# check the pod
+# kubectl get pods
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# check for the node where its running
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#
