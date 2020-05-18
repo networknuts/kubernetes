@@ -1,0 +1,69 @@
+# pod-with-volume.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  volumes:
+    - name: "web-data"
+      hostPath:
+        path: "/tmp/webserver"
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      volumeMounts:
+        - mountPath: "/var/www/html"
+          name: "web-data"
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+ 
+#
+# Creating a webserver pod that will use host hard disk 
+# to store its data. Data will be persistent and independent
+# to the lifecycle of the pod. 
+#
+# The volume will be automaticatally created on the host
+# where the pod is assigned by the scheduler.
+#
+# This pod definition also has memory and cpu limits
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-volume.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# {observe the mount location and node where its deployed}
+#
+# ssh onto the node where its deployed and go inside the pod
+# kubectl exec -it nnappone /bin/bash --namespace=learning
+#
+# { go inside /var/www/html/ directory and create a file }
+#
+# exit from the pod and delete the pod
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+# 
+# now again go inside the same node where the pod was running
+# you will still find the file created inside /tmp/webserver/
+# directory
+#

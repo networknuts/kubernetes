@@ -1,0 +1,67 @@
+# pod-with-node-affinity-cannot.yml
+#
+# First assign labels on all nodes in our cluster
+# kubectl label node nodeone.example.com size=small
+# kubectl label node nodetwo.example.com size=large
+#
+# Confirm the labels
+# kubectl get nodes --show-labels
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "500Mi"
+        requests:
+          memory: "300Mi"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: NotIn
+            values:
+            - small
+            
+
+
+#
+# Lets think we have some nodes with label small/medium/large
+# We want this pod, NEVER to be deployed on node having size=small
+#
+# Confirm for the labels on nodes using:
+#
+# kubectl get nodes --show-labels 
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-node-affinity-cannot.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning --output=wide
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# check for the node where its running. It will NOT be
+# running on node having size=small label
+# 
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#
+# delete the labels
+# kubectl label node nodeone.example.com size-
+# kubectl label node nodetwo.example.com size-
+# 

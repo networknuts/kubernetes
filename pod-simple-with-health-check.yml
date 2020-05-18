@@ -1,0 +1,60 @@
+# pod-simple-with-health-check.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      args:
+        - /bin/sh
+        - -c
+        - touch /tmp/health.txt; sleep 30; rm -rf /tmp/health.txt; sleep 35
+      livenessProbe:
+        exec:
+          command:
+            - cat 
+            - /tmp/health.txt
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+ 
+#
+# Creating a simple pod with health checks.
+# "periodSeconds" - kubelet should perform a liveness probe every 5 seconds
+# "initialDelaySeconds" - kubelet should wait 5 seconds before performing 
+#  the first probe
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-simple-with-health-check.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# 
+# observe that there is no pod restart within first 30s
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

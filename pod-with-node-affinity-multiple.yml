@@ -1,0 +1,68 @@
+# pod-with-node-affinity-multiple.yml
+#
+# First assign labels on all nodes in our cluster
+# kubectl label node nodeone.example.com size=small
+# kubectl label node nodetwo.example.com size=large
+#
+# Confirm the labels
+# kubectl get nodes --show-labels
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "500Mi"
+        requests:
+          memory: "300Mi"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In
+            values:
+            - small
+            - medium
+
+
+#
+# Lets think we have some nodes with label small/medium/large
+# We want this pod to be deployed on either pod having small
+# OR medium label
+#
+# Confirm for the labels on nodes using:
+#
+# kubectl get nodes --show-labels 
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-node-affinity-multiple.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning --output=wide
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# check for the node where its running. It must be
+# running on node having label size=small OR size=medium
+# 
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#
+# delete the labels
+# kubectl label node nodeone.example.com size-
+# kubectl label node nodetwo.example.com size-
+# 

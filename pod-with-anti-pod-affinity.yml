@@ -1,0 +1,63 @@
+# pod-with-anti-pod-affinity.yml
+#
+# 
+# First create a pod (nnweb) using
+# kubectl create -f pod-for-anti-affinity.yml
+#
+# Check the node where its running.
+#
+# Now we want this pod NEVER to be deployed on 
+# same node, where "nnweb" pod is running
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: "500Mi"
+        requests:
+          memory: "300Mi"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - nnweb
+        topologyKey: "kubernetes.io/hostname"
+
+
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-anti-pod-affinity.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning --output=wide
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+#
+# get details of all the pods
+# kubectl get pods -o wide --namespace=learning
+#
+# check that both the pods will be running on different nodes
+# and nnappone pod will never be deployed on same node where
+# nnweb pod is running
+# 
+# delete pod
+# kubectl delete pod nnappone --namespace=learning
+# kubectl delete pod nnweb --namespace=learning
+#

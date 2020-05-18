@@ -1,0 +1,46 @@
+# pod-simple-with-ports.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+ 
+#
+# Creating a simple pod. Which has apache
+# configured inside it. Exposed port is 80 
+# using TCP protocol  
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-simple-with-ports.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# 
+# Find the IP address of this pod and the node where
+# its running. Go to that node and do a :
+# 
+# curl http://ip-address-of-pod
+#
+# You should the website welcome message from 
+# Network Nuts
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+#

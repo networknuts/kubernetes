@@ -1,0 +1,31 @@
+# pod-for-anti-affinity.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnweb
+  namespace: learning
+  labels:
+   app: nnweb
+spec:
+  containers:
+    - name: nnweb-app
+      image: lovelearnlinux/webserver:v1
+#
+# Creating a simple pod. Which has apache
+# configured inside it.  
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-for-anti-affinity.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod nnweb --namespace=learning
+# 
+# Find the NODE, where its running.
+#

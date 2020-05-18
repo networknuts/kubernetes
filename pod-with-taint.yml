@@ -1,0 +1,81 @@
+# pod-with-taint.yml
+#
+# first add a taint (fragrance) to nodeone.example.com:
+# kubectl taint node nodeone.example.com color=pink:NoSchedule
+# 
+# add taint for nodetwo.example.com also:
+# kubectl taint node nodetwo.example.com color=yellow:NoSchedule
+#
+# confirm that taint is applied on nodeone.example.com & nodetwo.example.com:
+# kubectl describe node nodeone.example.com
+# kubectl describe node nodetwo.example.com
+# (check for value under Taints)
+#
+apiVersion: v1
+
+kind: Pod
+
+metadata:
+  name: nnwebserver
+  namespace: learning
+
+spec:
+  containers:
+    - name: nnwebserver
+      image: lovelearnlinux/webserver:v1
+      resources:
+        requests: #request means minimum
+          cpu: "500m"
+          memory: "128Mi"
+        limits: #limits means maximum
+          cpu: "1000m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+  tolerations:
+  - key: "color"
+    operator: "Equal"
+    value: "pink"
+    effect: "NoSchedule"
+
+#
+# Create the pod which has tolerance for color pink
+#
+# Create namespace learning -
+# kubectl create namespace learning
+#
+# Run the pod
+# kubectl create -f pod-with-taint.yml
+#
+# Check the pod
+# kubectl get pods --namespace=learning
+# (it should be running on nodeone.example.com)
+# (because of taint and toleration)
+#
+# Remember: taint & tolerance is only for restricting
+# nodes to ACCEPT only certain kind of pods. So,
+# our pod can also go to other nodes, which are 
+# NEUTRAL to taint (fragrance). But, nodeone.example.com
+# will accept ONLY those pods which have pink taint (fragrance)
+#
+# Delete pod
+# kubectl delete pod/nnwebserver --namespace=learning
+#
+# Delete the taints from the nodes:
+# kubectl taint node nodeone.example.com color:NoSchedule-
+# kubectl taint node nodetwo.example.com color:NoSchedule-
+#
+# Describe the node master.example.com and understand
+# why a pod is never assigned for master.example.com
+# kubectl describe node master.example.com 
+#
+
+
+
+
+
+
+
+

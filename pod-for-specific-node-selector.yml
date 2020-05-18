@@ -55,3 +55,6 @@ spec:
 # delete pod
 # kubectl delete pod/nnappone --namespace=learning
 #
+# delete the label from nodeone.example.com
+# kubectl label node nodeone.example.com sku-
+#

@@ -1,0 +1,94 @@
+# pod-with-volume-external.yml
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nnappone
+  namespace: learning
+  labels:
+   app: nnappone
+spec:
+  volumes:
+    - name: "web-root"
+      nfs:
+        server: ansible.example.com
+        path: "/webserver"
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      volumeMounts:
+        - mountPath: "/var/www/html"
+          name: "web-root"
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+ 
+#
+# Creating a webserver, which will mount its /var/www/html
+# from a nfs server inside our network. So the website is
+# available centrally. And it doesn't matter on which node
+# the pod is running. Pod will always be able to access the 
+# website pages from NFS server.
+#
+# I have created NFS server on our ansible controller, which
+# we had used for creating our kubernetes cluster. These are
+# the steps you need to perform on your ansible controller
+# for making it a nfs server.
+# -----------
+# mkdir /webserver
+# echo "<h1>webserver from nfs server</h1> " >> /webserver/index.html
+# chmod 777 /webserver
+# echo "/webserver *(rw,sync)" >> /etc/exports
+# systemctl start nfs-server
+# systemctl enable nfs-server
+# firewall-cmd --permanent --add-service={nfs,mountd,rpc-bind}
+# firewall-cmd --reload
+# showmount -e localhost { it should show you the /webserver directory }
+#------------
+#
+# create namespace learning -
+# kubectl create namespace learning
+#
+# run the pod
+# kubectl create -f pod-with-volume-external.yml
+#
+# check the pod
+# kubectl get pods --namespace=learning
+#
+# get details about pod
+# kubectl describe pod/nnappone --namespace=learning
+# {observe the Volumes and Mounts and node where its deployed}
+#
+# ssh onto the node where its deployed and go inside the pod
+# kubectl exec -it nnappone /bin/bash --namespace=learning
+#
+# give the command: df -h
+#
+# you should see that /var/www/html is mounted from ansible.example.com
+#
+# exit from the pod and come to your kubernetes master
+#
+# apply port forwarding to access the webserver:
+# kubectl port-forward nnappone 8080:80 --namespace=learning
+#
+# now you should be able to access the webserver with index.html
+# file contents residing on nfs server - ansible.example.com
+# run the command from kubernetes master:
+#
+# curl http://127.0.0.1:8080
+#
+# delete pod
+# kubectl delete pod/nnappone --namespace=learning
+# 
+# the website contents are still available for any other
+# pod to access and use it. Confirm by going on 
+# ansible.example.com and checking contents of /webserver
+#
