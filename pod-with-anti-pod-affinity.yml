@@ -26,7 +26,8 @@ spec:
         requests:
           memory: "300Mi"
   affinity:
-    podAntiAffinity:
+#    podAntiAffinity:
+    podAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchExpressions:

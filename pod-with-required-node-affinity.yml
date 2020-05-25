@@ -13,7 +13,7 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
         - matchExpressions:
-          - key: sku
+          - key: size
             operator: In
             values:
             - small       
@@ -28,19 +28,18 @@ spec:
 
 #
 # This means that the pod will get scheduled ONLY
-# on a node that has a sku=small label.
+# on a node that has a size=small label.
 #
 # First label one/more nodes with some kind of tag
 # we are classifying our nodes as small, medium &
-# heavy and the label name is "sku" value can be
+# heavy and the label name is "size" value can be
 # "small / medium / heavy"
 #
-# First label nodeone.example.com as small:
-#
-# kubectl label nodes nodeone.example.com sku=small
+# First label nodeone.example.com as small / medium:
+# kubectl label nodes nodeone.example.com size=small
+# kubectl label nodes nodetwo.example.com size=medium
 #
 # Confirm for the labels on nodes using:
-#
 # kubectl get nodes --show-labels 
 #
 # create namespace learning -
@@ -56,8 +55,12 @@ spec:
 # kubectl describe pod/nnappone --namespace=learning
 #
 # check for the node where its running, it should be
-# on any of the nodes with label "sku=small"
+# on any of the nodes with label "size=small"
 # 
 # delete pod
 # kubectl delete pod/nnappone --namespace=learning
+#
+# delete the labels
+# kubectl label node nodeone.example.com size-
+# kubectl label node nodetwo.example.com size-
 #

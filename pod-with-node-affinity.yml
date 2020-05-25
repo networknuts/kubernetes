@@ -2,7 +2,7 @@
 #
 # First assign labels on all nodes in our cluster
 # kubectl label node nodeone.example.com size=small
-# kubecrl label node nodetwo.example.com size=large
+# kubectl label node nodetwo.example.com size=large
 #
 # Confirm the labels
 # kubectl get nodes --show-labels

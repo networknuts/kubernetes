@@ -31,7 +31,7 @@ spec:
           - key: size
             operator: In
             values:
-            - small
+            - large
             - medium
 
 
