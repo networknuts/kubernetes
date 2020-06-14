@@ -1,0 +1,42 @@
+#batch-job.yml
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: batch-job
+spec:
+# completion: 5
+# this will run the pod 5 times, sequentially
+# parallelism: 2
+# this will create 2 parallel jobs, two pods and run in parallel
+  template:
+    metadata:
+      labels:
+        app: batch-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: nn-batch
+        image: lovelearnlinux/batch-job
+        
+ # run the job 
+ kubectl create -f batch-job.yml
+ # get info about job
+ kubectl get jobs
+ # get the pod its running
+ kubectl get po
+ # after 2 minutes the job will finish
+ # check it with
+ kubectl get po -a
+ # check the logs of the pod
+ kubectl logs <pod-name>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+        
