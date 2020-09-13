@@ -1,11 +1,13 @@
-# replica-set-one.yml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   name: nnwebserver
-  namespace: learning
+  namespace: default
 spec:
-  replicas: 2
+  replicas: 3
+  selector: 
+        matchLabels:
+               app: nnwebserver
   template:
     metadata:
       labels:
@@ -34,29 +36,3 @@ spec:
             - containerPort: 80
               name: http
               protocol: TCP
-
-# IMPORTANT POINTS #
-# to apply - 
-# kubectl apply -f replica-set-one.yml
-#
-# to inspect
-# kubectl get replicaset
-#
-# to inspect a pod for replicaset
-# kubectl get pod <pod-name> -o yaml
-#
-# to find pods for a replicaset
-# kubectl get pods -l app=nnwebserver 
-#
-# to scale replicaset
-# kubectl scale replicasets nnwebserver --replicas=4
-#
-# to autoscale replicaset based on CPU consumption:
-# kubectl autoscale rs nnwebserver --min=2 --max=5 --cpu-percent=80
-#
-# to get horizontal pod autoscaling details
-# kubectl get hpa
-#
-# to delete replicaset
-# kubectl delete rs nnwebserver
-#
