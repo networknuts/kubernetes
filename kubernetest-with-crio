@@ -1,0 +1,5 @@
+# Installing Kubernetes cluster on Ubuntu 20.04 using crio 1.18 and kubernetes version 1.18.0-00
+
+Minimum 3 machines with 2-4 GiB of RAM & 1 vcpu.
+All machines must have two NIC. One working in NAT (for Internet connection) and one Internal (for cluster communication)
+
