@@ -17,7 +17,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
 #2 - Adding kubernetes repo
 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list
-apt update
+apt-get update
 
 #3 - Installing kubernetes components
 Install kubeadm
