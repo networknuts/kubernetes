@@ -80,6 +80,11 @@ Initialize kubernetes controller
  
 [check for success message and run the commands mentioned in message]
 
+=== Install overlay network - calico in our case
+
+  curl https://docs.projectcalico.org/manifests/calico.yaml -O
+  kubectl apply -f calico.yaml
+  
 Check the kubernetes control node status
   kubectl get nodes
 
