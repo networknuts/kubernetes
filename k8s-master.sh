@@ -100,4 +100,4 @@ kubectl get node
 echo
 echo
 echo  '\033[5mScript finished, move to next step\033[0m'
-echo  '\033[5mDon't forget to comment swap line from /etc/fstab\033[0m'
+echo  '\033[5mDont forget to comment swap line from /etc/fstab\033[0m'
