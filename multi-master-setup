@@ -1,0 +1,188 @@
+MULTI-MASTER SETUP
+
+Cloud Platform used - AWS
+Instances created - 
+2 machines for master, ubuntu 16.04+, 2 CPU, 2 GB RAM, 10 GB storage
+2 machines for worker, ubuntu 16.04+, 1 CPU, 2 GB RAM, 10 GB storage
+1 machine for loadbalancer, ubuntu 16.04+, 1 CPU, 2 GB RAM, 10 GB storage
+
+<Note down the Internal IP addresses of all machines>
+<Change the hostnames of managers to manager1 and manager2 and workers to worker1 and worker2>
+<Recommended to run "top" after you do SSH into the machines, so connection won't drop>
+
+
+#####
+STEP #1 - Configuring Load Balancer
+#####
+
+1. SSH into the loadbalancer machine 
+2. Switch to root using sudo -i
+3. Change hostname (recommended), repeat the same step for all machines just change names to manager1/manager2/worker1/worker2
+          # hostnamectl set-hostname loadbalancer
+          # vim /etc/hosts
+               127.0.0.1 localhost loadbalancer
+4. Reboot to check, if needed
+5. Update repo and system
+          # sudo apt-get update && sudo apt-get upgrade -y
+6. Install HAProxy
+	  # sudo apt-get install haproxy -y
+7. Edit haproxy configuration file
+          # vim /etc/haproxy/haproxy.cfg
+
+   --- add these lines at bottom of file <respect the indents>
+       frontend fe-apiserver
+           	bind 0.0.0.0:6443
+           	mode tcp
+           	option tcplog
+           	default_backend be-apiserver
+  
+       backend be-apiserver
+   		mode tcp
+   		option tcplog
+   		option tcp-check
+   		balance roundrobin
+   		default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+       		server manager1 <manager1-ip-address>:6443 check
+       		server manager2 <manager2-ip-address>:6443 check
+
+    --- save and exit
+8. Restart haproxy and check
+	# systemctl restart haproxy
+	# systemctl enable haproxy
+	# systemctl status haproxy
+	# nc -v localhost 6443
+
+
+#####
+STEP #2
+#####
+
+Installing kubeadm / kubelet and docker on manager1/manager2/worker1/worker2
+
+Create a file for-all-machines.sh, with these contents and run on all machines expect loadbalancer
+
+########### for-all-machines.sh ########
+#!/bin/bash
+apt-get update
+
+#make swap off
+swapoff -a
+
+#enabling bridging
+
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+br_netfilter
+EOF
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+sudo sysctl --system
+
+#install kubeadm and kubelet
+apt-get update && apt-get install -y apt-transport-https curl
+
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+
+apt-get update
+apt-get install -y kubelet=1.19.0-00 kubeadm=1.19.0-00
+apt-mark hold kubelet kubeadm
+
+#install docker
+
+sudo apt-get update
+
+sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+sudo apt-get update
+sudo apt-get install docker-ce=5:19.03.14~3-0~ubuntu-bionic docker-ce-cli=5:19.03.14~3-0~ubuntu-bionic -y
+
+systemctl start docker
+ 
+echo "ALL DONE - OK"
+
+####### File for-all-machines.sh ENDS here
+
+
+#####
+STEP 3
+#####
+
+Initialize manager1 to bootstrap cluster
+
+1. SSH into manager1
+2. Get root access using sudo -i
+3. Execute the following command, just replace your loadbalancer internal IP
+
+	# kubeadm init --control-plane-endpoint "<loadbalancer-internal-IP>:6443" --upload-certs --pod-network-cidr=192.168.0.0/16
+
+4. Copy the output of SUCCESS in a file.
+
+#####
+STEP 4
+#####
+
+Login to manager2
+
+1. SSH into manager2
+2. Get root access using sudo -i
+3. Paste the token of manager copied from STEP 3. Something like this:
+
+	kubeadm join loadbalancer:6443 --token cnslau.kd5fjt96jeuzymzb \
+    --discovery-token-ca-cert-hash sha256:871ab3f050bc9790c977daee9e44cf52e15ee37ab9834567333b939458a5bfb5 \
+    --control-plane --certificate-key 824d9a0e173a810416b4bca7038fb33b616108c17abcbc5eaef8651f11e3d146
+ 
+#####
+STEP 5
+#####
+
+Login in worker1 and worker2 and repeat these steps
+
+1. SSH into worker1/worker2
+2. Get root access using sudo -i
+3. Paste the token of joining worker copied from STEP 3. Something like this:
+	kubeadm join loadbalancer:6443 --token cnslau.kd5fjt96jeuzymzb \
+    --discovery-token-ca-cert-hash sha256:871ab3f050bc9790c977daee9e44cf52e15ee37ab9834567333b939458a5bfb5 
+
+#####
+STEP 6
+#####
+
+Finally configure loadbalancer with kubeconfig and install kubectl 
+
+1. SSH into loadbalancer
+2. Get root access using sudo -i
+3. Create a directory - mkdir -p $HOME/.kube
+4. Copy the contents of /etc/kubernetes/admin.conf from master1 in a file named "config" inside $HOME/.kube/
+5. Install kubectl 
+	# snap install kubectl --classic
+6. Check cluster
+	# kubectl get nodes
+	<Nodes will not be ready>
+7. Install Overlay network/CNI
+	# kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml
+
+8. Again check the cluster, nodes will be READY, it may take some time
+	# kubectl get nodes
+
+	
+
+ 
