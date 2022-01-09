@@ -1,0 +1,31 @@
+# We have a user jack created in kubernetes who is given very restricted permissions on cluster in namespace "test"
+# Jack will use his workstation to access / manage kubernetes cluster
+# Jack need to install "kubectl" on his machine - snap install kubectl --classic
+# Jack need to create a directory ".kube" inside his home directory
+# Admin will send copy of /etc/kubernetes/admin.conf to jack with these modifications
+
+@@@@@
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1J ... output omitted
+    server: https://10.0.0.100:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    namespace: test
+    user: jack
+  name: jack
+current-context: jack
+kind: Config
+preferences: {}
+users:
+- name: jack
+  user:
+    client-certificate: /home/jack/jack.crt
+    client-key: /home/jack/jack.key
+    
+@@@@@
+
