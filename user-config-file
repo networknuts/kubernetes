@@ -2,7 +2,8 @@
 # Jack will use his workstation to access / manage kubernetes cluster
 # Jack need to install "kubectl" on his machine - snap install kubectl --classic
 # Jack need to create a directory ".kube" inside his home directory
-# Admin will send copy of /etc/kubernetes/admin.conf to jack with these modifications
+# Admin will send copy of /etc/kubernetes/admin.conf to jack with these modifications (jack can also do these things by himself)
+# Admin need to send jack.crt back to jack 
 
 @@@@@
 
