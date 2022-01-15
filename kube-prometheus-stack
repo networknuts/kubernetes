@@ -1,0 +1,55 @@
+### Monitoring kubernetes cluster using HELM + PROMETHEUS + GRAFANA
+### ON WORKSTATION MACHINE
+
+#############
+INSTALL LENS
+#############
+
+ wget https://api.k8slens.dev/binaries/Lens-5.3.3-latest.20211223.1.amd64.deb
+ dpkg -i Lens-5.3.3-latest.20211223.1.amd64.deb
+ 
+ ## Copy the .kube/config from manager to workstation /home/alok/.kube/config
+ 
+ Type - lens
+ and refer your config file
+ 
+ ## kubectl must be install on workstation machine
+ snap install kubectl --classic
+ 
+
+######################
+PROMETHEUS + GRAFANA
+######################
+
+### STEP ONE ### 
+
+Install Helm Chart
+
+-----
+curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+sudo apt-get install apt-transport-https --yes
+echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+-----
+
+### STEP TWO ### 
+
+Install Kube Prometheus Helm Chart application using Helm
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+kubectl create ns monitoring
+helm install prometheus --namespace monitoring prometheus-community/kube-prometheus-stack
+
+### STEP THREE ###
+Use the prometheus grafana stack for monitoring kubernetes cluster live
+
+kubectl get pods -n monitoring
+
+kubectl get svc -n monitoring   ## Get the details of prometheus-grafana service
+
+kubectl port-forward -n monitoring service/prometheus-grafana 3000:80
+
+In Browser - http://localhost:3000
+
