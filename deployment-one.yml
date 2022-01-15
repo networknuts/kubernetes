@@ -38,10 +38,10 @@ spec:
             failureThreshold: 3
           resources:
             requests: #request means minimum
-              cpu: "500m"
+              cpu: "100m"
               memory: "128Mi"
             limits: #limits means maximum
-              cpu: "1000m"
+              cpu: "200m"
               memory: "256Mi"
           ports:
             - containerPort: 80
