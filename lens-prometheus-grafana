@@ -55,7 +55,7 @@ kubectl port-forward -n monitoring service/prometheus-grafana 3000:80
 In Browser - http://localhost:3000
 
 
-#######
+#########
 Reference - https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
-#######
+#########
 
