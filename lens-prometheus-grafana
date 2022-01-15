@@ -1,4 +1,4 @@
-### Monitoring kubernetes cluster using HELM + PROMETHEUS + GRAFANA
+### Monitoring kubernetes cluster using LENS + HELM + PROMETHEUS + GRAFANA
 ### ON WORKSTATION MACHINE
 
 #############
@@ -17,9 +17,9 @@ INSTALL LENS
  snap install kubectl --classic
  
 
-######################
-PROMETHEUS + GRAFANA
-######################
+###########################
+HELM + PROMETHEUS + GRAFANA
+###########################
 
 ### STEP ONE ### 
 
@@ -35,7 +35,8 @@ sudo apt-get install helm
 
 ### STEP TWO ### 
 
-Install Kube Prometheus Helm Chart application using Helm
+Install Kube Prometheus Helm Chart application using Helm. 
+This helm chart (application) will install and configure prometheus and grafana
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
@@ -52,4 +53,9 @@ kubectl get svc -n monitoring   ## Get the details of prometheus-grafana service
 kubectl port-forward -n monitoring service/prometheus-grafana 3000:80
 
 In Browser - http://localhost:3000
+
+
+#######
+Reference - https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+#######
 
