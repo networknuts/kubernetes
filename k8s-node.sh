@@ -4,11 +4,7 @@
 ## v1.19.0 CKA
 echo  '\033[1mThis Script will work on Ubuntu 18.04\033[0m'
 
-sleep 3
-echo
-echo  '\033[7mLoading Bridge Modules & Enabling them\033[0m'
-echo
-
+echo  '\033[1mAdding Bridge\033[0m'
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 br_netfilter
 EOF
@@ -18,50 +14,33 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
 
-sudo sysctl --system
-echo
-echo "---DONE"
-echo
-echo
-echo  '\033[7mDisabling SWAP until next reboot\033[0m'
-echo 
-sudo swapoff -a
+sysctl --system
+echo  '\033[1mInstalling Docker\033[0m'
+apt-get update
 
-echo
-echo  '\033[7mInstalling Docker Engine version 19.03\033[0m'
-echo
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install -y docker-ce=5:19.03.14~3-0~ubuntu-bionic docker-ce-cli=5:19.03.14~3-0~ubuntu-bionic 
+apt-get install ca-certificates curl gnupg lsb-release -y
 
-## check this link https://stackoverflow.com/questions/27657888/how-to-install-docker-specific-version
-echo
-echo  '\033[7mStarting & Enabling Docker\033[0m'
-echo
-sudo systemctl start docker
-sudo systemctl enable docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-echo
-echo  '\033[7mInstalling Kubeadm, Kubelet & Kubectl\033[0m'
-## Adding Repos
-sudo sh -c "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -"
-sudo sh -c "echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' >> /etc/apt/sources.list.d/kubernetes.list"
-sudo apt-get update
-sudo apt install -y kubeadm=1.19.0-00
-sudo apt install -y kubectl=1.19.0-00 --allow-downgrades
-sudo apt install -y kubelet=1.19.0-00 --allow-downgrades
+apt-get update
 
+apt-get install -y docker-ce=5:19.03.15~3-0~ubuntu-focal docker-ce-cli=5:19.03.15~3-0~ubuntu-focal containerd.io
 
-#sudo sh -c "echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' >> /etc/apt/sources.list.d/kubernetes.list"
+echo  '\033[1mInstalling Kubeadm, Kubelet and Kubectl\033[0m'
+apt-get update
 
-#sudo sh -c "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -"
+apt-get install -y apt-transport-https ca-certificates curl
 
-#sudo apt-get update
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 
-#sudo apt-get install -y kubeadm=1.19.0-00 kubelet=1.19.0-00 kubectl=1.19.0-00
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list\
 
-sudo apt-mark hold kubelet kubeadm kubectl
+apt-get update
+
+apt-get install -y kubelet=1.19.10-00 kubeadm=1.19.10-00 kubectl=1.19.10-00
+
+apt-mark hold kubelet kubeadm kubectl
 
 ## Installing openssh-server
 echo 
