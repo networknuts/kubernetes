@@ -10,3 +10,6 @@ spec:
     kind: Deployment
     name: k8s-autoscaler
   targetCPUUtilizationPercentage: 10
+
+# now put some load on deployment
+# while true; do curl http://service-ip-address ; done
