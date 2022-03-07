@@ -32,7 +32,7 @@ metadata:
   labels:
     run: k8s-autoscaler
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
   - port: 80
   selector:
