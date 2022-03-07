@@ -9,4 +9,4 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: k8s-autoscaler
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 10
