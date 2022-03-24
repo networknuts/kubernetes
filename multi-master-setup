@@ -59,7 +59,7 @@ STEP #2
 
 Installing kubeadm / kubelet and docker on manager1/manager2/worker1/worker2
 
-Create a file for-all-machines.sh, with these contents and run on all machines expect loadbalancer
+Create a file for-all-machines.sh, with these contents and run on all machines except loadbalancer
 
 ########### for-all-machines.sh ########
 #!/bin/bash
