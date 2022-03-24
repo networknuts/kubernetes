@@ -114,6 +114,7 @@ sudo add-apt-repository \
 
 sudo apt-get update
 sudo apt-get install docker-ce=5:19.03.14~3-0~ubuntu-bionic docker-ce-cli=5:19.03.14~3-0~ubuntu-bionic -y
+#sudo apt-get install docker.io -y
 
 systemctl start docker
  
