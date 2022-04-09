@@ -18,15 +18,15 @@ sysctl --system
 echo  '\033[1mInstalling Docker\033[0m'
 apt-get update
 
-apt-get install ca-certificates curl gnupg lsb-release -y
+#apt-get install ca-certificates curl gnupg lsb-release -y
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+#curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-apt-get update
+#apt-get update
 
-apt-get install -y docker-ce=5:19.03.15~3-0~ubuntu-focal docker-ce-cli=5:19.03.15~3-0~ubuntu-focal containerd.io
+#apt-get install -y docker.io
 
 echo  '\033[1mInstalling Kubeadm, Kubelet and Kubectl\033[0m'
 apt-get update
@@ -39,7 +39,7 @@ echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https:/
 
 apt-get update
 
-apt-get install -y kubelet=1.19.10-00 kubeadm=1.19.10-00 kubectl=1.19.10-00
+apt-get install -y kubelet=1.19.10-00 kubeadm=1.19.10-00 kubectl=1.19.10-00 docker.io
 
 apt-mark hold kubelet kubeadm kubectl
 
