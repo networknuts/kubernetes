@@ -33,3 +33,6 @@ spec:
     protocol: TCP
     port: 80
     targetPort: nginx-web-svc
+
+
+#we should be able to access the application using service IP 
