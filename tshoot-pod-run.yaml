@@ -15,3 +15,4 @@ spec:
         requests:
           cpu: "10"
           
+#pod must be in running state
