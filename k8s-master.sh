@@ -39,7 +39,7 @@ echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https:/
 
 apt-get update
 
-apt-get install -y kubelet=1.19.10-00 kubeadm=1.19.10-00 kubectl=1.19.10-00 docker.io
+apt-get install -y kubelet=1.20.10-00 kubeadm=1.20.10-00 kubectl=1.20.10-00 docker.io
 
 apt-mark hold kubelet kubeadm kubectl
 
