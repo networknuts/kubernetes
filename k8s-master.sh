@@ -58,7 +58,7 @@ echo  '\033[7mInitializing the cluster\033[0m'
 
 sleep 3
 
-sudo kubeadm init --kubernetes-version 1.19.0 --pod-network-cidr 192.168.0.0/16 --apiserver-advertise-address 10.0.0.100
+sudo kubeadm init  --pod-network-cidr 192.168.0.0/16 --apiserver-advertise-address 10.0.0.100
 
 sleep 5
 
