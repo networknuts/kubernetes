@@ -1,0 +1,26 @@
+Step #1 - Stop Docker
+sudo systemctl stop docker
+
+Step #2 - Create new location
+mkdir /home/alok/docker
+
+Create / edit the file 
+
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+     "data-root": "/home/alok/docker"
+}
+EOF
+
+Step #3 - Copy all the contents of /var/lib/docker to new location
+
+sudo cp -axT /var/lib/docker /home/alok/docker
+
+Step #4 - Start docker 
+sudo systemctl start docker
+
+Step #5 - Confirm all is good
+
+docker images
+docker inspect <image-name>:<tag> | grep -i workdir
+
