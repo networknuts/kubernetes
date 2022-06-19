@@ -21,14 +21,14 @@ systemctl restart kubelet
 echo "==="
 echo "Initializing cluster"
 echo "==="
-kubeadm init --apiserver-advertise-address 10.0.0.100
+kubeadm init --apiserver-advertise-address 10.0.1.100
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 curl https://projectcalico.docs.tigera.io/manifests/calico.yaml -O
 kubectl apply -f calico.yaml
 echo "wait for 60 seconds"
-sleep 60
+#sleep 60
 kubectl get nodes
 echo
 echo
