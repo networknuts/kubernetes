@@ -1,0 +1,40 @@
+##
+#YOU SHOULD have min 3 node cluster for this
+##
+#This configuration will make sure that one pod is 
+#deployed on each node, maintaining a balance and HA
+#of application
+#
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spread
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spread
+  namespace: spread
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      type: spread
+  template:
+    metadata:
+      labels:
+        type: spread
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              type: spread    
+      containers:
+      - name: pause
+        image: lovelearnlinux/webserver:v1
+        
+# NOW try scaling the deployment to 6 replicas 
+# and notice how pods are deployed on nodes
