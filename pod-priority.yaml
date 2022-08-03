@@ -1,0 +1,69 @@
+# Pods can have priority. That's importance of a Pod relative to other Pods. If a Pod cannot be scheduled, 
+# the scheduler tries to preempt (evict) lower priority Pods to make scheduling of the pending Pod possible.
+
+## POINTS TO REMEMBER ##
+
+# Its a two step process:
+# 1 - create a priority class
+# 2 - add pod in that priority class
+
+# A PriorityClass is a non-namespaced object. Higher value, higher priority.
+# Value can be uptp 1,000,000,000 (one billion)
+
+# But how can we safeguard system-critical pods from preemption?
+# There are two default high-priority classes set by Kubernetes
+
+# system-node-critical: This class has a value of 2000001000. Pods like etcd, kube-apiserver, and Controller manager use this priority class.
+# system-cluster-critical: This class has a value of 2000000000. Addon Pods like coredns, calico controller, metrics server, etc use this Priority class.
+
+STEP #1 - Create a Priority Class
+vim mission-critical-priority-class.yaml
+
+## file start here
+
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: mission-critical-apps
+value: 1000000
+preemptionPolicy: Never  #this will not remove(preempt) lower priority pods, pod will this priority class
+                         # will be just placed ahead of other pods in the scheduling queue. The value can
+                         # be set to "PreemptLowerPriority" which will remove lower priority pods. 
+                         # NOT expected from a Gentleman :) 
+globalDefault: false #will not change priority of existing pods
+description: "To be used only for mission critical applications"
+
+# file ends here
+
+STEP #2 - Configure application to use priority class.
+vim mission-critical-pod.yaml
+
+# file start here
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topgun
+  labels:
+    app: topgun
+    env: prod
+spec:
+  containers:
+  - name: boxone
+    image: lovelearnlinux/webserver:v1
+    imagePullPolicy: IfNotPresent
+  priorityClassName: mission-critical-apps
+
+# file ends here
+
+###### ADDITIONAL POINTS TO REMEMBER ######
+# When Pod priority is enabled, the scheduler orders pending Pods by their priority and a pending Pod is placed 
+# ahead of other pending Pods with lower priority in the scheduling queue. As a result, the higher priority Pod may 
+# be scheduled sooner than Pods with lower priority if its scheduling requirements are met.
+# 
+# If such Pod cannot be scheduled, scheduler will continue and tries to schedule other lower priority Pods
+# But, if for some reason, the scheduling requirements of "priority class" pods are not met, the scheduler goes 
+# ahead with scheduling the lower priority pods.
+#
+# The scheduler preempts (evicts) low priority pod from a node where it can schedule the higher priority pod. 
+# The evicted pod gets a graceful default termination time of 30 seconds.
