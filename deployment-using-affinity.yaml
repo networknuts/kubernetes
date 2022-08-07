@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gotohell
+spec:
+  selector:
+    matchLabels:
+      run: gotohell
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+#uncomment below two lines when you update to a new image
+#      annotations:
+#        kubernetes.io/change-cause: "updated to new version"
+      labels:
+        run: gotohell
+    spec:
+      affinity:
+        podAffinity:
+        #podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+               matchLabels:
+                  run: gotohell
+      containers:
+        - name: gotohell
+#for checking rolling updates first try with
+#         image: lovelearnlinux/webserver:v1
+#create deployment and check it, then change
+#         image: lovelearnlinux/webserver:v2
+          image: lovelearnlinux/webserver:v2
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /var/www/html/index.html
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 20
+            failureThreshold: 3
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
