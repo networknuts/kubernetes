@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:                                            
+        app: nginx                                   
+    spec:
+      affinity:
+        podAntiAffinity:                                 
+          requiredDuringSchedulingIgnoredDuringExecution:   <---- hard requirement not to schedule "nginx" pod if already one scheduled.
+          - topologyKey: kubernetes.io/hostname     <---- Anti affinity scope is host     
+            labelSelector:                               
+              matchLabels:                               
+                app: nginx        
+      container:
+        image: nginx:latest
