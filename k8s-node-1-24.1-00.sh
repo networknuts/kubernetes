@@ -2,13 +2,13 @@
 echo "disabling swap"
 swapoff -a
 sed -e '/swap/s/^/#/g' -i /etc/fstab
-echo "installing kubernetes version 1.23.7-00"
+echo "installing kubernetes version 1.24.1-00"
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 apt-get update
-apt-get install -y kubelet=1.23.7-00 kubeadm=1.23.7-00 kubectl=1.23.7-00 docker.io
+apt-get install -y kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 docker.io
 apt-mark hold kubelet kubeadm kubectl
 cat <<EOF | sudo tee /etc/docker/daemon.json
 {
