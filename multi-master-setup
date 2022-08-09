@@ -9,6 +9,7 @@ Instances created -
 <Note down the Internal IP addresses of all machines>
 <Change the hostnames of managers to manager1 and manager2 and workers to worker1 and worker2>
 <Recommended to run "top" after you do SSH into the machines, so connection won't drop>
+<Also make sure to add entry of IP to hostname in /etc/hosts in ALL machines>
 
 
 #####
@@ -21,7 +22,8 @@ STEP #1 - Configuring Load Balancer
           # hostnamectl set-hostname loadbalancer
           # vim /etc/hosts
                127.0.0.1 localhost loadbalancer
-4. Reboot to check, if needed
+	       x.x.x.x loadbalancer
+4. Reboot to check
 5. Update repo and system
           # sudo apt-get update && sudo apt-get upgrade -y
 6. Install HAProxy
@@ -63,60 +65,26 @@ Create a file for-all-machines.sh, with these contents and run on all machines e
 
 ########### for-all-machines.sh ########
 #!/bin/bash
-apt-get update
-
-#make swap off
+echo "disabling swap"
 swapoff -a
-
-#enabling bridging
-
-cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
-br_netfilter
-EOF
-
-cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
-
-sudo sysctl --system
-
-#install kubeadm and kubelet
-apt-get update && apt-get install -y apt-transport-https curl
-
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-
+sed -e '/swap/s/^/#/g' -i /etc/fstab
+echo "installing kubernetes version 1.24.1-00"
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 apt-get update
-apt-get install -y kubelet=1.24.1-00 kubeadm=1.24.1-00
-apt-mark hold kubelet kubeadm
+apt-get install -y kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 docker.io
+apt-mark hold kubelet kubeadm kubectl
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+    "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
+systemctl daemon-reload
+systemctl restart docker
+systemctl restart kubelet
 
-#install docker
-
-sudo apt-get update
-
-sudo apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common
-
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-sudo add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable"
-
-sudo apt-get update
-sudo apt-get install docker-ce=5:19.03.14~3-0~ubuntu-bionic docker-ce-cli=5:19.03.14~3-0~ubuntu-bionic -y
-#sudo apt-get install docker.io -y
-
-systemctl start docker
  
 echo "ALL DONE - OK"
 
@@ -179,7 +147,9 @@ Finally configure loadbalancer with kubeconfig and install kubectl
 	# kubectl get nodes
 	<Nodes will not be ready>
 7. Install Overlay network/CNI
-	# kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml
+	# kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+	# curl https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml -O
+	# kubectl create -f custom-resources.yaml
 
 8. Again check the cluster, nodes will be READY, it may take some time
 	# kubectl get nodes
