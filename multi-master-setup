@@ -91,7 +91,7 @@ deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 
 apt-get update
-apt-get install -y kubelet=1.19.0-00 kubeadm=1.19.0-00
+apt-get install -y kubelet=1.24.1-00 kubeadm=1.24.1-00
 apt-mark hold kubelet kubeadm
 
 #install docker
