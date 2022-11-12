@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: def-cpu-mem-limit
+  namespace: dev
+spec:
+  limits:
+  - default:
+      cpu: 111m
+      memory: 99Mi
+    defaultRequest:
+      cpu: 101m
+      memory: 91Mi
+    max:
+      cpu: 200m
+      memory: 100Mi
+    min:
+      cpu: 100m
+      memory: 90Mi
+    type: Container
+    
+# in this case if pod has no resource block
+# the defaultrequest and default will apply
+# in case pod has resource block
+# its resource block has be to within
+# min and max
