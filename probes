@@ -1,0 +1,129 @@
+#### STARTUP PROBE - SUCCESS
+apiVersion: v1
+kind: Pod
+metadata:
+  name: startup-probe-demo
+spec:
+  containers:
+  - name: startup-probe-demo
+    image: busybox:latest
+    args:
+    - /bin/sh
+    - -c
+    - sleep 300
+    startupProbe:
+    exec:
+        command:
+        - cat
+        - /etc/hostname
+    periodSeconds: 10
+    failureThreshold: 10
+    
+#####
+check with describe pod .. it will be a success
+#####
+    
+#### STARTUP PROBE - FAILURE
+apiVersion: v1
+kind: Pod
+metadata:
+  name: startup-probe-demo
+spec:
+  containers:
+  - name: startup-probe-demo
+    image: busybox:latest
+    args:
+    - /bin/sh
+    - -c
+    - sleep 300
+    startupProbe:
+    exec:
+        command:
+        - cat
+        - /etc/fakefile
+    periodSeconds: 10
+    failureThreshold: 10
+ ####
+ check with describe pod - it will fail and container will be restarted
+ ####
+ 
+#### LIVENESS PROBE - SUCCESS
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: registry.k8s.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 4
+      failureThreshold: 2
+      successThreshold: 3
+ 
+####
+ check with describe pod - it will be success and pod will run 
+####
+
+LIVENESS PROBE - FAIL AFTER SOMETIME
+#####
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: registry.k8s.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -f /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+ 
+ ####
+ check with describe - this container will fail after 30 seconds, as file is removed
+ ####
+ 
+ ### READINESS PROBE
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readygo
+  labels:
+    app: readygo
+spec:
+  containers:
+  - name: ready
+    image: lovelearnlinux/webserver:v1
+    ports:
+    - containerPort: 80
+    readinessProbe:
+      tcpSocket:
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+
+###
+check with describe pod .. it will be success
+###
