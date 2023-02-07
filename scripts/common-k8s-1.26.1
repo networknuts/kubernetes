@@ -74,6 +74,17 @@ systemctl restart crio
 echo ""
 echo  "\033[4mCRI-O installed and configured.\033[0m"
 echo ""
+echo  "\033[4mSetting nameservers.\033[0m"
+echo ""
+apt update
+apt install resolvconf
+systemctl start resolvconf.service
+systemctl enable resolvconf.service
+echo -e "nameserver 8.8.8.8 \nnameserver 8.8.4.4" > /etc/resolvconf/resolv.conf.d/head
+systemctl restart resolvconf.service
+systemctl restart systemd-resolved.service
+
+echo ""
 # Install kubelet, kubectl and Kubeadm
 echo ""
 echo  "\033[4mNOW, installing kubelet, kubectl and kubeadm.\033[0m"
