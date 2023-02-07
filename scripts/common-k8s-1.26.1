@@ -57,6 +57,14 @@ sudo apt-get install cri-o cri-o-runc -y
 sudo systemctl daemon-reload
 sudo systemctl enable crio --now
 
+cat <<EOF | sudo tee /etc/crio/crio.conf
+registries = [
+"docker.io"
+]
+EOF
+
+systemctl restart crio
+
 echo "CRI runtime installed susccessfully"
 
 # Install kubelet, kubectl and Kubeadm
