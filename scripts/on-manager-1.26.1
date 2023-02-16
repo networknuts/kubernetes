@@ -23,6 +23,5 @@ sudo chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
 
 # Install Calico Network Plugin Network
 
-curl https://docs.projectcalico.org/manifests/calico.yaml -O
-
-kubectl apply -f calico.yaml
+echo "Now get calico.yaml and apply it"
+echo "kubectl apply -f calico.yaml"
