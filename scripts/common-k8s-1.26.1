@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Common setup for ALL SERVERS (Control Plane and Nodes)
-# will run on Ubuntu 20.04 LTS
+# will run on Ubuntu Server 22.04 LTS
 # If you see some warning at certificates, RUN AGAIN
 
 #set -euxo pipefail
@@ -24,7 +24,7 @@ sudo apt-get update -y
 echo ""
 echo  "\033[4mInstalling CRI-O runtime.\033[0m"
 echo ""
-OS="xUbuntu_20.04"
+OS="xUbuntu_22.04"
 
 VERSION="1.23"
 
