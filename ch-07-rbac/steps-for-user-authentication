@@ -1,0 +1,35 @@
+Step 1 - User creating his openssl key and converting it into .csr from his workstation machine 
+
+# openssl genrsa -out user.key 2028
+# openssl req -new -key user.key -out user.csr -subj "/CN=username"
+
+Step 2 - User submit his key and csr to CA (on manager)
+
+# scp user.key user.csr login@manager:
+
+Step 3 - Root CA will convert his .csr into .crt and send the .crt back to user
+
+# openssl x509 -req -in user.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key \
+  -CAcreateserial -out user.crt -days 365
+
+# scp user.crt login@workstation:
+
+Step 4 - Now user will create a .kube directory under his home and copy the config file sent by root CA
+
+Step 5 - User also needs to install kubectl on his workstation
+
+# sudo snap install kubectl --classic
+
+#######
+
+Once this is done root CA will create user credentials on kubernetes manager and limit user to a namespace
+dev, for this example
+
+# kubectl config set-credentials user --client-certificate=user.crt --client-key=user.key
+# kubectl config set-context user-context --cluster=kubernetes --namespace=dev --user=user
+
+######
+
+Finally a role and role binding will be attached with user
+
+ 
