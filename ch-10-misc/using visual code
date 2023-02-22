@@ -1,0 +1,31 @@
+Using Workstation to access kubernetes cluster like in production
+
+Step #1 - Install openssh server and git
+# sudo apt install openssh-server git
+# sudo systemctl start sshd
+# sudo systemctl status sshd
+
+Step #2 - Install kubectl on workstation
+# sudo snap install kubectl --classic
+
+Step #3 - Copy ~/.kube/config file from manager to workstation
+
+Step #4 - Install visual studio code on workstation
+
+Go to - https://code.visualstudio.com/
+
+Step #5 - Add kubernetes extenstion in visual studio code
+
+Step #6 - Click on "kubernetes" icon on left hand side panel. You should be able to explore your cluster
+
+Step #7 - Clone networknuts sample repo to your workstation machine
+# git clone https://github.com/networknuts/kubernetes
+
+Step #8 - Click on "Explorer" icon on top left hand side panel and browse to your "kubernetes" folder
+
+Step #9 - Go inside chapter1 and select myfirstpod.yml from left hand side panel, you should see yaml in right hand side panel 
+
+Step #10 - Use "ctrl + shift + p" to enter command panel and write - kubernetes - select "create"
+
+Step #11 - Click on "kubernetes" icon on left hand side and go inside workloads->pods. You should be able to see pod
+
