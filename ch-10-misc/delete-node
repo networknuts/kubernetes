@@ -1,0 +1,7 @@
+## ON MANAGER
+kubectl get nodes
+kubectl drain <node-name> --ignore-daemonsets
+kubectl delete node <node-name>
+
+## ON NODE
+kubeadm reset
