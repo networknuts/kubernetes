@@ -1,0 +1,24 @@
+Using Kubernetes Descheduler
+
+Step #1 - Install helm
+
+curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+sudo apt-get install apt-transport-https --yes
+echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+
+Step #2 - Install Descheduler using helm chart
+
+helm repo add descheduler https://kubernetes-sigs.github.io/descheduler/
+helm install my-release --namespace kube-system descheduler/descheduler
+
+(uninstall, in case)
+helm delete my-release --namespace kube-system
+
+Step #3 - 
+
+kubectl -n kube-system get cronjobs
+kubectl -n kube-system get configmap
+kubectl -n kube-system describe configmap my-release-descheduler
+kubectl -n kube-system edit configmap my-release-descheduler
