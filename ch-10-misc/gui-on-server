@@ -1,0 +1,8 @@
+sudo apt update && sudo apt upgrade
+sudo apt install slim
+sudo apt install ubuntu-desktop
+sudo reboot
+
+Optional - to remove
+sudo apt remove slim ubuntu-desktop
+
