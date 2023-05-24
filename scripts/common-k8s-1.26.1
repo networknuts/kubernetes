@@ -5,7 +5,7 @@
 # If you see some warning at certificates, RUN AGAIN
 
 #set -euxo pipefail
-
+apt-get update -y
 # Variable Declaration
 
 KUBERNETES_VERSION="1.26.1-00"
@@ -16,9 +16,6 @@ echo  "\033[4mDisabling Swap Memory.\033[0m"
 echo ""
 sudo swapoff -a
 sed -e '/swap/s/^/#/g' -i /etc/fstab
-
-sudo apt-get update -y
-
 
 # Install CRI-O Runtime
 echo ""
@@ -56,7 +53,7 @@ EOF
 curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$VERSION/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
 curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
 
-sudo apt-get update
+sudo apt-get update -y
 sudo apt-get install cri-o cri-o-runc -y
 
 sudo systemctl daemon-reload
@@ -76,8 +73,7 @@ echo  "\033[4mCRI-O installed and configured.\033[0m"
 echo ""
 echo  "\033[4mSetting nameservers.\033[0m"
 echo ""
-apt update
-apt install resolvconf
+apt install resolvconf -y
 systemctl start resolvconf.service
 systemctl enable resolvconf.service
 cat <<EOF | sudo tee /etc/resolvconf/resolv.conf.d/head
@@ -93,11 +89,10 @@ echo ""
 echo ""
 echo  "\033[4mNOW, installing kubelet, kubectl and kubeadm.\033[0m"
 echo ""
-sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
 sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSION" kubeadm="$KUBERNETES_VERSION"
 sudo apt-get update -y
