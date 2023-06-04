@@ -1,5 +1,6 @@
 Either pass the --registry-mirror option when starting dockerd manually, 
-or edit /etc/docker/daemon.json and add the registry-mirrors key and value, to make the change persistent.
+or edit /etc/docker/daemon.json (file need to be created) and add the 
+registry-mirrors key and value, to make the change persistent.
 
 
 {
