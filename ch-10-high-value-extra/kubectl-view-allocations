@@ -1,0 +1,25 @@
+kubectl-view-allocations
+
+kubectl plugin lists allocations for resources (cpu, memory, gpu,...) as defined into the manifest of nodes and running pods. 
+It doesn't list usage like kubectl top. It can provide result grouped by namespaces, nodes, pods and filtered by resources'name.
+
+Installation:
+
+Run the script 
+
+curl https://raw.githubusercontent.com/davidB/kubectl-view-allocations/master/scripts/getLatest.sh | bash
+
+Usage:
+
+kubectl-view-allocations -h
+
+kubectl-view-allocations #simplest view of resources
+
+kubectl-view-allocations -u #see cpu & memory utilization
+
+kubectl-view-allocations -r cpu #only cpu resource usage
+
+kubectl-view-allocations -r memory #only memory resource usage
+
+kubectl-view-allocations -g node #node specific usage of memory/cpu
+
