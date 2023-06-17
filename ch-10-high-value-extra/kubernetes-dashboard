@@ -1,12 +1,17 @@
 == FROM WORKSTATION MACHINE ==
 
 STEP #1 - Get dashboard
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+# kubectl -n kubernetes-dashboard expose deployment kubernetes-dashboard --name k8s-dash -type=NodePort
+
+# kubectl -n kubernetes-dashboard describe svc k8s-dash
+<note down the NodePort value>
 
 STEP #2 - run 
 kubectl proxy
 
-STEP #3 - Open Browser and access http://127.0.0.1:8001
+STEP #3 - Open Browser and access http://127.0.0.1:8001 OR https://<any-node-ip>:NodePort-value
 
 STEP #4 - You need a service account with cluster-admin rights. Create a file dash-srv-account.yaml
 
