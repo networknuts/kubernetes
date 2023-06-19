@@ -1,0 +1,50 @@
+kubescape - scan cluster / yaml / helm charts
+
+Installation:
+
+Linux Ubuntu
+
+Method #1
+curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+
+Method #2
+sudo add-apt-repository ppa:kubescape/kubescape
+sudo apt update
+sudo apt install kubescape
+
+Usage:
+
+#1 - Scan running kubernetes cluster
+
+# kubescape scan --enable-host-scan --verbose
+
+PS: The Kubernetes API server has a very limited set of information about the worker nodes in a cluster. To help Kubescape evaluate the security posture of your nodes, you can use the host scanner, a component which is deployed to each node when a scan is being performed and removed immediately after.
+
+#2 - Scan running kubernetes cluster with NSA / mitre framework
+
+# kubescape scan framework nsa/mitre
+
+#3 - Scan for specific namespace in kubernetes cluster
+
+# kubescape scan --include-namespaces <namespace-1>,<namespace-2>,<namespace-3>
+
+#4 - Scan & exclude certain namespaces
+
+# kubescape scan --exlude-namespaces kube-system
+
+#5 - Scan yaml files before using it
+
+# kubescape scan *.yaml
+
+#6 - Scan kubernetes manifests files from a git repo
+
+# kubescape scan https://github.com/networknuts/kubernetes
+
+#7 - Scan and get output in pdf
+
+# kubescape scan framework nsa --format pdf --output scan-result.pdf
+
+
+###
+Reference - https://github.com/kubescape/kubescape
+###
