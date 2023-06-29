@@ -1,0 +1,115 @@
+STEP #1
+====
+On Proxy server - Proxy IP is 10.0.0.200. Port is 3128
+====
+
+apt update -y
+apt install squid -y
+cat <<EOF | sudo tee /etc/squid/allowed-ips.txt
+10.0.0.100
+10.0.0.1
+10.0.0.2
+#any other IP you want to allow 
+EOF
+
+vim /etc/squid/squid.conf
+
+--add / edit these lines
+#
+# INSERT YOUR OWN RULES ...
+
+acl allowed-ips src "/etc/squid/allowed-ips.txt"
+
+http_access allow localhost
+http_access allow allowed-ips
+#And finally deny all other access to this proxy
+http_access deny all
+
+---- save and exit
+
+systemctl restart squid
+systemctl enable squid
+ss -tulnp | grep -i squid # note down the port number, default is 3128
+
+
+STEP #2
+###### ON CLUSTER MACHINES #######
+
+
+=== system wide proxy setting
+
+vim /etc/profile.d/proxy.sh
+
+# set proxy config via profie.d - should apply for all users
+# 
+export http_proxy="http://10.0.0.200:3128/"
+export https_proxy="http://10.0.0.200:3128/"
+export ftp_proxy="http://10.0.0.200:3128/"
+export no_proxy="127.0.0.1,localhost"
+
+# For curl
+export HTTP_PROXY="http://10.0.0.200:3128/"
+export HTTPS_PROXY="http://10.0.0.200:3128/"
+export FTP_PROXY="http://10.0.0.200:3128/"
+export NO_PROXY="127.0.0.1,localhost"
+
+
+---
+
+chmod +x /etc/profile.d/proxy.sh
+source /etc/profile.d/proxy.sh
+
+=== proxy for apt 
+
+vim /etc/apt/apt.conf.d/80proxy
+
+Acquire::http::proxy "http://10.0.0.200:3128/";
+Acquire::https::proxy "http://10.0.0.200:3128/";
+Acquire::ftp::proxy "ftp://10.0.0.200:3128/";
+
+=== proxy for wget
+
+vim ~/.wgetrc
+use_proxy = on
+http_proxy = http://10.0.0.200:3128/ 
+https_proxy = http://10.0.0.200:3128/ 
+ftp_proxy = http://10.0.0.200:3128/ 
+
+---
+source ~/.wgetrc
+
+===
+also configure docker to use proxy
+
+vim ~/.docker/config.json
+
+{
+ "proxies": {
+   "default": {
+     "httpProxy": "http://10.0.0.200:3128",
+     "httpsProxy": "https://10.0.0.200:3129",
+     "noProxy": "*.test.example.com,.example.org,127.0.0.0/8"
+   }
+ }
+}
+
+
+===
+configure crio to use proxy
+
+vim /etc/systemd/system/cri-o.service
+
+Add this line in [Service] block
+
+
+[Service]
+Environment="HTTP_PROXY=http://10.0.0.200:3128/" "HTTPS_PROXY=http://10.0.0.200:3128/" "NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+Type=notify
+.
+.
+.
+
+---
+systemctl daemon-reload
+systemctl restart cri-o.service
+crictl pull image-name
