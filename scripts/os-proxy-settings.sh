@@ -1,4 +1,7 @@
 #!/bin/bash
+#### RUN ON ALL MACHINES of CLUSTER ####
+##### ONLY IF YOU ARE USING PROXY ######
+
 echo "configuring proxy for OS"
 
 cat <<EOF | sudo tee /etc/profile.d/proxy.sh
