@@ -79,22 +79,43 @@ ftp_proxy = http://10.0.0.200:3128/
 source ~/.wgetrc
 
 ===
-also configure docker to use proxy
+Configure DOCKER to use proxy
 
-vim ~/.docker/config.json
+mkdir -p /etc/systemd/system/docker.service.d
 
-{
- "proxies": {
-   "default": {
-     "httpProxy": "http://10.0.0.200:3128",
-     "httpsProxy": "https://10.0.0.200:3129",
-     "noProxy": "*.test.example.com,.example.org,127.0.0.0/8"
-   }
- }
-}
+cat <<EOF | sudo tee /etc/systemd/system/docker.service.d/httpd-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://10.0.0.200:3128/"
+Environment="HTTPS_PROXY=http://10.0.0.200:3128/"
+Environment="NO_PROXY= 127.0.0.1,localhost"
+EOF
+
+systemctl daemon-reload
+systemctl restart docker
+systemctl show docker --property Environment
 
 
 ===
+Configure CRIO to use proxy
+
+mkdir -p /etc/systemd/system/crio.service.d
+
+cat <<EOF | sudo tee /etc/systemd/system/crio.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://10.0.0.200:3128/"
+Environment="HTTPS_PROXY=http://10.0.0.200:3128/"
+Environment="NO_PROXY= 127.0.0.1,localhost"
+EOF
+
+systemctl daemon-reload
+systemctl restart crio
+
+FINALLY set http_proxy for your bash environment also
+
+echo -e "\n\n#PROXY SETTINGS\nexport http_proxy=http://10.0.0.200:3128\nexport https_proxy=http://10.0.0.200:3128\nexport no_proxy=localhost,127.0.0.1,10.0.0.100,10.0.0.1,10.0.0.2,172.16.0.0/16" >> ~/.bashrc
+
+source ~/.bashrc
+
 configure crio to use proxy
 
 vim /etc/systemd/system/cri-o.service
