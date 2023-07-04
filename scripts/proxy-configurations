@@ -70,10 +70,8 @@ Acquire::ftp::proxy "ftp://10.0.0.200:3128/";
 === proxy for wget
 
 vim ~/.wgetrc
-use_proxy = on
 http_proxy = http://10.0.0.200:3128/ 
 https_proxy = http://10.0.0.200:3128/ 
-ftp_proxy = http://10.0.0.200:3128/ 
 
 ---
 source ~/.wgetrc
@@ -115,6 +113,10 @@ FINALLY set http_proxy for your bash environment also
 echo -e "\n\n#PROXY SETTINGS\nexport http_proxy=http://10.0.0.200:3128\nexport https_proxy=http://10.0.0.200:3128\nexport no_proxy=localhost,127.0.0.1,10.0.0.100,10.0.0.1,10.0.0.2,172.16.0.0/16" >> ~/.bashrc
 
 source ~/.bashrc
+
+
+########
+
 
 configure crio to use proxy
 
