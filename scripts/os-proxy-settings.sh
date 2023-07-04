@@ -6,17 +6,18 @@ echo "configuring proxy for OS"
 
 cat <<EOF | sudo tee /etc/profile.d/proxy.sh
 
+#!/bin/bash
 export http_proxy="http://10.0.0.200:3128/"
 export https_proxy="http://10.0.0.200:3128/"
 export ftp_proxy="http://10.0.0.200:3128/"
-export no_proxy="127.0.0.1,localhost"
+export no_proxy="127.0.0.1,localhost,10.0.0.0/8,10.0.0.100,10.0.0.1,10.0.0.2"
 
-#for curl
-
+# For curl
 export HTTP_PROXY="http://10.0.0.200:3128/"
 export HTTPS_PROXY="http://10.0.0.200:3128/"
 export FTP_PROXY="http://10.0.0.200:3128/"
-export NO_PROXY="127.0.0.1,localhost"
+export NO_PROXY="127.0.0.1,localhost,10.0.0.0/8,10.0.0.100,10.0.0.1,10.0.0.2"
+
 
 EOF
 
