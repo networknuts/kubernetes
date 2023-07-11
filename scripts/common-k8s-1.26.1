@@ -76,6 +76,13 @@ echo  "\033[4mCRI-O installed and configured.\033[0m"
 echo ""
 echo  "\033[4mSetting nameservers.\033[0m"
 echo ""
+#sudo systemctl stop systemd-resolved
+#sudo rm /etc/resolv.conf
+#create new /etc/resolv.conf with no loopback entry
+#systemctl start systemd-resolved
+#systemctl enable systemd-resolved
+
+
 apt install resolvconf -y
 systemctl start resolvconf.service
 systemctl enable resolvconf.service
