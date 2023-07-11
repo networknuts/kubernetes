@@ -1,4 +1,10 @@
+#!/bin/bash
 #FOR FLANNEL WITH HELM on KUBERNETES
+echo 
+echo "**********"
+echo "---- Installing Flannel using Helm ----"
+echo " --- no need to install calico now ---"
+echo "**********"
 
 #step 1 - install helm
 
