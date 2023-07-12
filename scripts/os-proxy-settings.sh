@@ -29,12 +29,14 @@ EOF
 
 chmod +x /etc/profile.d/proxy.sh
 sh /etc/profile.d/proxy.sh
-source /etc/profile.d/proxy.sh
-
-
 
 echo "SETUP YOUR BASH ENVIRONMENT"
 echo -e "\n\n#PROXY SETTINGS\nexport http_proxy=http://10.0.0.200:3128\nexport https_proxy=http://10.0.0.200:3128\nexport no_proxy=localhost,127.0.0.1,10.0.0.100,10.0.0.1,10.0.0.2,172.16.0.0/16" >> ~/.bashrc
-source ~/.bashrc
 
-
+echo
+echo
+echo "Now run - source ~/.bashrc"
+echo "And run - source /etc/profile.d/proxy.sh"
+echo
+echo
+sleep 5
