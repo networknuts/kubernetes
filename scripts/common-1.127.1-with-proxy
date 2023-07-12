@@ -43,7 +43,7 @@ EOF
 
 sudo sysctl --system
 
-#### NEW location for keyrings
+##### NEW location for keyrings
 echo
 echo
 echo "********"
