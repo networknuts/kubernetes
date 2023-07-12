@@ -2,7 +2,7 @@
 #
 # Common setup for ALL SERVERS (Control Plane and Nodes)
 # will run on Ubuntu Server 22.04 LTS
-# If you see some warning at certificates, RUN AGAIN
+# If you see some warning at certificates, RUN AGAIN ##
 
 #set -euxo pipefail
 apt-get update -y
