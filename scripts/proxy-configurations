@@ -34,7 +34,8 @@ ss -tulnp | grep -i squid # note down the port number, default is 3128
 
 STEP #2
 ###### ON CLUSTER MACHINES #######
-
+### all machines must be installed with gateway (proxy-ip) and dns configured ###
+####
 
 === system wide proxy setting
 
@@ -116,5 +117,12 @@ echo -e "\n\n#PROXY SETTINGS\nexport http_proxy=http://10.0.0.200:3128\nexport h
 source ~/.bashrc
 
 
-########
+#####
+
+### IN CASE calico pod fails to get IP, run this on manager
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=en.*
+# replace en.* with your interface name
+# delete the calico pod and check again
+
+
 
