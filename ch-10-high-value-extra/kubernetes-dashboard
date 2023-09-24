@@ -3,7 +3,7 @@
 STEP #1 - Get dashboard
 # kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 
-# kubectl -n kubernetes-dashboard expose deployment kubernetes-dashboard --name k8s-dash -type=NodePort
+# kubectl -n kubernetes-dashboard expose deployment kubernetes-dashboard --name k8s-dash --type=NodePort
 
 # kubectl -n kubernetes-dashboard describe svc k8s-dash
 <note down the NodePort value>
