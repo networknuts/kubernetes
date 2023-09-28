@@ -104,6 +104,8 @@ spec:
         - name: nfs-test # template.spec.volumes[].name
           mountPath: /usr/share/nginx/html # mount inside of container
           #readOnly: true # if enforcing read-only on volume
+        ports:
+        - containerPort: 80
 
 
 ========
@@ -166,6 +168,8 @@ spec:
         - name: web-root # template.spec.volumes[].name
           mountPath: /var/www/html # mount inside of container
           #readOnly: true # if enforcing read-only on volume
+        ports:
+        - containerPort: 80
 
 ###
 
