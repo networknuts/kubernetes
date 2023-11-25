@@ -115,10 +115,10 @@ echo ""
 echo "updating /etc/default/kubelet"
 echo ""
 echo "===="
-ip_address=$(ip route | grep 'ens34 ' | awk '{print $9}')
-echo "" > /etc/default/kubelet
-echo "KUBELET_EXTRA_ARGS='--node-ip=$ip_address'" > /etc/default/kubelet
-systemctl daemon-reload && systemctl restart kubelet
+#ip_address=$(ip route | grep 'ens34 ' | awk '{print $9}')
+#echo "" > /etc/default/kubelet
+#echo "KUBELET_EXTRA_ARGS='--node-ip=$ip_address'" > /etc/default/kubelet
+#systemctl daemon-reload && systemctl restart kubelet
 echo ""
 echo "===="
 echo ""
