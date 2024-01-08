@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dbpod
+spec:
+  containers:
+  - name: mysql
+    image: mysql:latest
+    ports:
+    - containerPort: 3329
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "redhat"
