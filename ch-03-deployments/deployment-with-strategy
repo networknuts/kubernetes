@@ -49,57 +49,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 4
           failureThreshold: 6
-          successThreshold: 1apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: hello-deploy
-spec:
-  replicas: 10
-  selector:
-     matchLabels:
-        app: hello-world
-  minReadySeconds: 10
-  strategy:
-     type: RollingUpdate
-     rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
-  template:
-    metadata:
-      labels:
-        app: hello-world
-    spec:
-      containers:
-      - name: hello-pod
-        image: lovelearnlinux/webserver:v1
-        ports:
-        - containerPort: 80
-        resources:
-          limits:
-            cpu: 100m
-            memory: 128Mi
-          requests:
-            cpu: 50m
-            memory: 100Mi
-        readinessProbe:
-          exec:
-            command:
-            - cat
-            - /var/www/html/index.html
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 4
-          failureThreshold: 2
           successThreshold: 1
-        livenessProbe:
-          exec:
-            command:
-            - cat
-            - /var/www/html/index.html
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 4
-          failureThreshold: 6
-          successThreshold: 1    
 
 # kubectl set image deploy/hello-deploy hello-pod=lovelearnlinux/webserver:v2 --annotation=update image from v1 to v2
