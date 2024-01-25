@@ -1,0 +1,34 @@
+For most cases, HPA is used with the trigger based on CPU usage. In this case, a good practice to define the target is:
+		
+	(CPU_LIMIT - safety) / (CPU_LIMIT + growth)
+
+Where:
+
+CPU_LIMIT: CPU limit is the usage limit on the pod. In most cases, the limit is 100%, but for node-pools that have a considerable percentage of idle resource, we can increase the limit.
+safety: We don't want the resource to reach its limit, so we set a safety threshold.
+growth: Percentage of traffic growth that we expect in a few minutes (say next 5 minutes).
+
+  A practical example is an application where we set the limit at 100% usage for cpu, a safety threshold of 15% with an expected traffic growth of 30% in 5 minutes:
+
+	(1 - 0.15) / (1 + 0.30) = 0.66
+
+So the HPA would look something like this:
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 66
