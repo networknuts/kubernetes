@@ -1,0 +1,60 @@
+###USING ENVIRONMENT VARIABLES IN KUBERNETES YAML
+
+Step #1 - Create a environment variable 
+
+export NGINX_REPLICAS=3
+
+Step #2 - Refer it in yaml - mydeployment.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: ${NGINX_REPLICAS}
+  selector:
+    matchLabels:
+      app: nginx
+  minReadySeconds: 10
+  strategy:
+     type: RollingUpdate
+     rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: lovelearnlinux/webserver:v1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-dep-svc
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+Step #3 - Use "envsubst" utility to apply 
+
+envsubst < mydeployment.yaml | kubectl apply -f -
+
