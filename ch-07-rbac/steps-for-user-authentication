@@ -1,6 +1,6 @@
 Step 1 - User creating his openssl key and converting it into .csr from his workstation machine 
 
-# openssl genrsa -out user.key 2028
+# openssl genrsa -out user.key 2048
 # openssl req -new -key user.key -out user.csr -subj "/CN=username"
 
 Step 2 - User submit his key and csr to CA (on manager)
