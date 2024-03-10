@@ -102,8 +102,10 @@ echo ""
 sudo apt-get install -y apt-transport-https ca-certificates curl
 #sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 # 93 changed to line below
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
-echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+#curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+#echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
 sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSION" kubeadm="$KUBERNETES_VERSION"
 sudo apt-mark hold kubelet kubeadm kubectl
@@ -139,4 +141,3 @@ echo ""
 echo ""
 echo "REBOOTING in 10 seconds"
 sleep 10
-reboot
