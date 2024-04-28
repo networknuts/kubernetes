@@ -2,7 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello-deploy
-spec:
+  annotations:
+    kubernetes.io/change-cause: "changing version to new"
+  spec:
   replicas: 10
   selector:
      matchLabels:
@@ -52,3 +54,7 @@ spec:
           successThreshold: 1
 
 # kubectl set image deploy/hello-deploy hello-pod=lovelearnlinux/webserver:v2 --annotation=update image from v1 to v2
+# kubectl annotate deployments.apps hello-deploy kubernetes.io/change-cause="image changed to nginx:latest"
+# kubectl rollout history deployment hello-deploy --revision 5
+
+
