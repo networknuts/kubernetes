@@ -14,4 +14,7 @@ vim /etc/default/kubelet
   ## add this line ##
   KUBELET_CONFIG_ARGS='--node-ip=<node internal ip address>'
 
+Method #3 - Edit /var/lib/kubelet/kubeadm-flags.env
+add: --node-ip=<node internal ip address>
+
 In both cases run - systemctl daemon-reload && systemctl restart kubelet
