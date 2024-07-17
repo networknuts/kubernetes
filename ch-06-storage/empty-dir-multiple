@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: empty-multi
+spec:
+  containers:
+  - image: nginx
+    imagePullPolicy: IfNotPresent
+    name: boxone
+    volumeMounts:
+    - mountPath: /demo
+      name: demo-volume
+  - name: boxtwo
+    image: lovelearnlinux/webserver:v1
+    volumeMounts:
+    - mountPath: /var/www/html
+      name: demo-volume
+  volumes:
+  - name: demo-volume
+    emptyDir: {}
