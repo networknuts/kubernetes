@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: empty-pod
+spec:
+#  runtimeClassName: allsecure
+  containers:
+  - image: lovelearnlinux/webserver:v1
+    imagePullPolicy: IfNotPresent
+    name: boxone
+    volumeMounts:
+    - mountPath: /var/www/html
+      name: demo-volume
+  volumes:
+  - name: demo-volume
+    emptyDir: {}
