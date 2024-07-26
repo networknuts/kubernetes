@@ -1,6 +1,12 @@
 #!/bin/bash
 #### RUN ON ALL MACHINES of CLUSTER ####
 ##### ONLY IF YOU ARE USING PROXY ######
+##### 10.0.0.200 is our PROXY IP #####
+##### 10.0.0.100 = manager #####
+##### 10.0.0.1 = nodeone #####
+##### 10.0.0.2 = nodetwo #####
+##### 172.16.0.0/16 = pod network #####
+
 clear
 echo
 echo
