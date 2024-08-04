@@ -1,0 +1,10 @@
+FROM ubuntu:latest
+LABEL description="secure webserver" environment="for test/dev only" author="networknuts"
+RUN apt update -y && apt install apache2 -y
+RUN mkdir -p /var/run/apache2 /var/lock/apache2 /var/log/apache2
+RUN chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 /var/www/html/
+
+COPY source/ /var/www/html/
+USER www-data
+EXPOSE 80
+CMD ["apache2ctl", "-D", "FOREGROUND"]
