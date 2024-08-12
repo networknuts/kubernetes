@@ -128,7 +128,7 @@ Create a namespace "prod" and run some applications there
 
 Take backup using velero:
 
-# velero backup create prod-backup --include-namespaces nginx-example
+# velero backup create prod-backup --include-namespaces prod
 
 Check into S3 bucket you will see backup visible there.
 
