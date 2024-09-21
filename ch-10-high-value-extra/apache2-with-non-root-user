@@ -8,3 +8,6 @@ COPY source/ /var/www/html/
 USER www-data
 EXPOSE 80
 CMD ["apache2ctl", "-D", "FOREGROUND"]
+
+
+## Using docker lint will help checking code quality - https://hadolint.github.io/hadolint/
