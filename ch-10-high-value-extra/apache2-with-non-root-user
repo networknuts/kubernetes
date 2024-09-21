@@ -11,3 +11,4 @@ CMD ["apache2ctl", "-D", "FOREGROUND"]
 
 
 ## Using docker lint will help checking code quality - https://hadolint.github.io/hadolint/
+## Dockle - Container Image Linter for Security, Helping build the Best-Practice Docker Image - https://github.com/goodwithtech/dockle
