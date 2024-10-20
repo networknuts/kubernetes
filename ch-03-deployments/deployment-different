@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: different
+  labels:
+    app: different
+spec:
+  replicas: 3  # Number of pod replicas
+  selector:
+    matchLabels:
+      app: different
+  template:
+    metadata:
+      labels:
+        app: different
+    spec:
+      containers:
+      - name: boxone
+        image: lovelearnlinux/different:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: different-service
+spec:
+  type: NodePort  # Change to LoadBalancer if using a cloud provider
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080  # Port to expose on the node
+  selector:
+    app: different
