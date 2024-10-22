@@ -1,0 +1,5 @@
+## This is because of finalizers.
+
+kubectl get namespace <stuck_namespace> -o json > <stuck_namespace>.json
+kubectl replace --raw "/api/v1/namespaces/<stuck_namespace>/finalize" -f ./<stuck_namespace>.json
+kubectl get namespace
