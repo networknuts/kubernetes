@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KUBERNETES_VERSION=v1.31
+KUBERNETES_VERSION=v1.30
 CRIO_VERSION=v1.31
 
 echo ""
@@ -39,3 +39,10 @@ echo "############# PACKAGES INSTALLED  ################"
 echo "##################################################"
 echo
 echo
+echo ""
+echo "===="
+echo "Generate token on manager using"
+echo "==="
+echo "kubeadm token create --print-join-command"
+echo ""
+echo ""
