@@ -1,0 +1,39 @@
+ETCDCTL_API=3 etcdctl --data-dir="/var/lib/etcd-backup" \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot restore restore-filename.db
+
+
+Change these in - vi /etc/kubernetes/manifests/etcd.yaml
+
+spec:
+  containers:
+  - command:
+  - --data-dir=/var/lib/<etcd-backup>
+
+  volumeMounts:
+  - mountPath: </var/lib/etcd-backup>
+    name: etcd-data
+
+  volumes:
+  - hostPath:
+      path: </var/lib/etcd-backup>
+      type: DirectoryOrCreate
+    name: etcd-data
+
+
+=== save and exit
+
+Then execute 
+
+kubectl -n kube-system delete pod <name-of-etcd-pod> 
+OR
+systemctl restart kubelet.service 
+(or both)
+
+wait for sometimes and then give
+
+kubectl get nodes
+kubectl get pods
