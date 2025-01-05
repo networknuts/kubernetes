@@ -1,0 +1,26 @@
+Velero -- Backup from Cluster-A & Restore to Cluster-B
+
+Install the velero on both the clusters: clusterA(backup),clusterB(restore)
+Make sure both the cluster points to the same S3 bucket.
+
+Install Velero on both Cluster-A and Cluster-B
+
+## both the cluster point to the same S3 bucket
+
+velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.0.1 \
+    --bucket <bucketname>\
+    --backup-location-config region=<region> \
+    --snapshot-location-config region=<region> \
+    --secret-file /root/.aws/credentials
+
+Take Backup of Cluster-A
+
+velero backup create <BACKUP_NAME>
+velero backup create clusterbackup1
+
+login to the ClusterB and restore the Cluster A backup on it.
+
+velero restore create --from-backup <backupname>
+velero restore create --from-backup clusterbackup1
