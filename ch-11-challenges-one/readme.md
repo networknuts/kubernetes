@@ -204,4 +204,4 @@ In `project-tiger`:
 
 ---
 
-Let me know if you want this saved as a file or want a version with collapsible sections for better navigation.
+
