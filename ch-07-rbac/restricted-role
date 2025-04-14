@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev
+  name: limited-pods
+rules:
+- apiGroups: [""]
+  #
+  # will allow users in this role to view details of
+  # pod named - pod-a and pod-b
+  resources: ["pods"]
+  resourceNames: ["pod-a", "pod-b"]
+  verbs: ["update", "get", "list"]
+

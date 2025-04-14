@@ -1,0 +1,13 @@
+Create file - /etc/docker/daemon.json 
+with your custom ip range
+ 
+{
+        "bip": "10.0.1.1/24",
+        "default-address-pools": [
+                { "base": "10.0.2.0/18", "size": 24 }
+        ]
+}
+
+## save and exit
+systemctl restart docker
+  

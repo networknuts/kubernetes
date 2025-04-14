@@ -1,0 +1,49 @@
+#### CREATING SECOND KUBERNETES ADMIN ####
+
+
+Step #1 - New admin - alok, should generate his openssl key and csr, from his workstation
+
+openssl genrsa -out alok.key 2048
+openssl req -new -key alok.key -subj "/CN=alok/O=system:masters" -out alok.csr
+
+Step #2 - Send the alok.key and alok.csr to manager, using scp
+
+Step #3 - MANAGER - should approve the csr request
+
+openssl x509 -req -in alok.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -out alok.crt
+
+Step #4 - MANAGER - now send the alok.crt back to alok user (the new cluster admin)
+
+Step #5 - MANAGER add the user alok in the pre-defined clusterrole - cluster-admin
+
+kubectl describe clusterrole cluster-admin
+kubectl create clusterrolebinding alok-admin --clusterrole=cluster-admin --user=alok
+kubectl describe clusterrolebinding alok-admin
+
+STEP #6 - ALOK - will install kubectl on his machine
+
+STEP #7 - ALOK - the new admin should have ~/.kube/config file with these contents
+
+apiVersion: v1
+
+kind: Config
+current-context: alok@kubernetes
+
+clusters:
+- cluster:
+    certificate-authority-data: <output of - cat /etc/kubernetes/pki/ca.crt | base64>
+    server: https://<ip-address-manager>:6443
+  name: kubernetes
+
+contexts:
+- context:
+    cluster: kubernetes
+    user: alok
+  name: alok@kubernetes
+
+users:
+- name: alok
+  user:
+    client-certificate: /home/alok/alok.crt
+    client-key: /home/alok/alok.key
+

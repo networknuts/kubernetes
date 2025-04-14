@@ -1,0 +1,119 @@
+STEP #1 
+
+### Label your nodeone 
+kubectl label node nodeone size=small
+### my nodeone has only 2GiB of memory so it can't run more than 3 pods asking for 600Mi each
+### you have to do your calculations for this lab
+
+
+STEP #2
+
+### Create two priority classes - high-priority & low-priority
+### vim priority-classes.yaml
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: low-priority
+value: 500
+globalDefault: false
+description: "This priority class should be used for non-critical service pods only."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000
+globalDefault: false
+description: "This priority class should be used for critical service pods only."
+
+
+### file ends here
+# kubectl apply -f priority-classes.yaml
+# kubectl get priorityclasses
+
+STEP #2
+
+### Create two deployments. One will use low-priority and other high-priority class
+### vim dep-low-priority.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivial-app
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      priorityClassName: low-priority
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 300m
+            memory: 600Mi
+          requests:
+            cpu: 300m
+            memory: 600Mi
+      nodeSelector:
+          size: small
+
+### file ends here
+# kubectl apply -f dep-low-priority.yaml
+#### check pods they will be running soon
+# kubectl get pods
+
+######## NOW ##########
+## Create another application wanting to run on nodeone with high-priority class
+### vim dep-high-priority.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: critical-app
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 300m
+            memory: 600Mi
+          requests:
+            cpu: 300m
+            memory: 600Mi
+      nodeSelector:
+        size: small
+
+### file ends here
+# kubectl apply -f dep-high-priority.yaml
+##### the moment you run a high priority application on same node with resource crunch
+##### kubernetes will run the high priority class application and make the earlier one in pending
+# kubectl get pods
+
+

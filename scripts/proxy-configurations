@@ -1,0 +1,128 @@
+STEP #1
+====
+On Proxy server - Proxy IP is 10.0.0.200. Port is 3128
+====
+
+apt update -y
+apt install squid -y
+cat <<EOF | sudo tee /etc/squid/allowed-ips.txt
+10.0.0.100
+10.0.0.1
+10.0.0.2
+#any other IP you want to allow 
+EOF
+
+vim /etc/squid/squid.conf
+
+--add / edit these lines
+#
+# INSERT YOUR OWN RULES ...
+
+acl allowed-ips src "/etc/squid/allowed-ips.txt"
+
+http_access allow localhost
+http_access allow allowed-ips
+#And finally deny all other access to this proxy
+http_access deny all
+
+---- save and exit
+
+systemctl restart squid
+systemctl enable squid
+ss -tulnp | grep -i squid # note down the port number, default is 3128
+
+
+STEP #2
+###### ON CLUSTER MACHINES #######
+### all machines must be installed with gateway (proxy-ip) and dns configured ###
+####
+
+=== system wide proxy setting
+
+vim /etc/profile.d/proxy.sh
+
+# set proxy config via profie.d - should apply for all users
+#!/bin/bash
+export http_proxy="http://10.0.0.200:3128/"
+export https_proxy="http://10.0.0.200:3128/"
+export ftp_proxy="http://10.0.0.200:3128/"
+export no_proxy="127.0.0.1,localhost,10.0.0.0/8,10.0.0.100,10.0.0.1,10.0.0.2,192.168.0.0/16,172.16.0.0/16"
+#values for no_proxy - localhost, host-network, pod-cidr-network, service-network-cidr
+#
+# For curl
+export HTTP_PROXY="http://10.0.0.200:3128/"
+export HTTPS_PROXY="http://10.0.0.200:3128/"
+export FTP_PROXY="http://10.0.0.200:3128/"
+export NO_PROXY="127.0.0.1,localhost,10.0.0.0/8,10.0.0.100,10.0.0.1,10.0.0.2,192.168.0.0/16,172.16.0.0/16"
+
+---
+
+chmod +x /etc/profile.d/proxy.sh
+source /etc/profile.d/proxy.sh
+sh /etc/profile.d/proxy.sh
+
+=== proxy for apt 
+
+vim /etc/apt/apt.conf.d/80proxy
+
+Acquire::http::proxy "http://10.0.0.200:3128/";
+Acquire::https::proxy "http://10.0.0.200:3128/";
+Acquire::ftp::proxy "ftp://10.0.0.200:3128/";
+
+=== proxy for wget
+
+vim ~/.wgetrc
+http_proxy = http://10.0.0.200:3128/ 
+https_proxy = http://10.0.0.200:3128/ 
+
+---
+source ~/.wgetrc
+
+===
+Configure DOCKER to use proxy
+
+mkdir -p /etc/systemd/system/docker.service.d
+
+cat <<EOF | sudo tee /etc/systemd/system/docker.service.d/httpd-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://10.0.0.200:3128/"
+Environment="HTTPS_PROXY=http://10.0.0.200:3128/"
+Environment="NO_PROXY= 127.0.0.1,localhost,10.0.0.0/8,172.16.0.0/16"
+EOF
+
+systemctl daemon-reload
+systemctl restart docker
+systemctl show docker --property Environment
+
+
+===
+Configure CRIO to use proxy
+
+mkdir -p /etc/systemd/system/crio.service.d
+
+cat <<EOF | sudo tee /etc/systemd/system/crio.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://10.0.0.200:3128/"
+Environment="HTTPS_PROXY=http://10.0.0.200:3128/"
+Environment="NO_PROXY= 127.0.0.1,localhost,10.0.0.0/8,172.16.0.0/16"
+EOF
+
+systemctl daemon-reload
+systemctl restart crio
+
+##### FINALLY set http_proxy for your bash environment also
+
+echo -e "\n\n#PROXY SETTINGS\nexport http_proxy=http://10.0.0.200:3128\nexport https_proxy=http://10.0.0.200:3128\nexport no_proxy=localhost,127.0.0.1,10.0.0.100,10.0.0.1,10.0.0.2,172.16.0.0/16" >> ~/.bashrc
+
+source ~/.bashrc
+
+
+#####
+
+### IN CASE calico pod fails to get IP, run this on manager
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=en.*
+# replace en.* with your interface name
+# delete the calico pod and check again
+
+
+

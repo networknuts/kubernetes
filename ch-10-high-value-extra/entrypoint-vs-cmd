@@ -1,0 +1,7 @@
+FROM debian:wheezy
+ENTRYPOINT ["/bin/ping"]
+CMD ["localhost"]
+
+
+FROM debian:wheezy
+CMD ["/bin/ping", "localhost"]

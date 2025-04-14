@@ -1,0 +1,103 @@
+##########################################
+ MetalLB on bare metal Kubernetes cluster
+##########################################
+
+
+## Step #1 - Installing using Helm Chart
+
+kubectl create ns metal
+helm repo add metallb https://metallb.github.io/metallb
+helm install metallb metallb/metallb -n metal
+
+helm -n metal list
+kubectl -n metal get all
+
+## Step #2 - Create IP Address Pool
+
+Get the IP range your cluster is using.
+
+ip a s #get ip which is used to go to Internet - 192.168.0.0/24
+
+vim metal-ip-address-pool.yaml
+
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: test-pool
+  namespace: metal
+spec:
+  addresses:
+  - 192.168.0.100-192.168.0.110
+
+## file ends here
+
+kubectl apply -f metal-ip-address-pool.yaml
+
+## Step #3 - Create L2 Advertising
+
+vim metal-l2-advertising.yaml
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: example
+  namespace: metal
+spec:
+  ipAddressPools:
+  - test-pool
+
+## file ends here
+
+kubectl apply -f metal-l2-advertising.yaml
+
+## Step #4 - Create a application with LoadBalancer service
+
+vim application.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-dep-svc
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+
+## file ends here
+
+kubectl apply -f application.yaml
+
+kubectl get svc #check External IP on your service
+
+## Try accessing the application on external IP from your base OS
+## if all is good, it should work
+

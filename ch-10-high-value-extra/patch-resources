@@ -1,0 +1,95 @@
+Step #1 - create a deployment - sampledeploy.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        env: test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 110m
+            memory: 100Mi
+        resizePolicy:
+        - resourceName: cpu
+          restartPolicy: NotRequired
+        - resourceName: memory
+          restartPolicy: RestartContainer
+
+Step #2 - create the deployment - 
+
+kubectl create -f sampledeploy.yaml
+kubectl get pods -o wide
+
+Step #3 - add a patch file to change labels - patch-labels.yaml
+---
+spec:
+  template:
+    metadata:
+      labels:
+        app: nginx
+        env: dev
+
+Step #4 - apply the patch
+kubectl patch deployment nginx-deployment --patch-file patch-labels.yaml
+
+Step #5 - check the results and repeat the same for cpu / memory / nodeselector patches
+
+patch-cpu.yaml
+---
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 110m
+            memory: 100Mi
+
+patch-memory.yaml
+---
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 110m
+            memory: 110Mi
+
+patch-nodeselector.yaml
+---
+spec:
+  template:
+    spec:
+      nodeSelector:
+        key: value
+
+ 

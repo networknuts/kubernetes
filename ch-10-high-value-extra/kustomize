@@ -1,0 +1,210 @@
+#### Install Kustomize
+
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+
+sudo install -o root -g root -m 0755 kustomize /usr/local/bin/kustomize
+
+kustomize version
+
+### CREATE directory structure
+
+mkdir ~/myapp
+mkdir ~/myapp/base
+mkdir ~/myapp/overlays
+mkdir ~/myapp/overlays/dev
+mkdir ~/myapp/overlays/prod
+
+#### STEP #1 - Polulate base
+
+vim ~/myapp/base/deployment.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+
+vim ~/myapp/base/service.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: web-service
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+
+
+vim ~/myapp/base/kustomization.yaml
+
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- deployment.yaml
+- service.yaml
+
+# To add common labels to manifest file
+commonLabels:
+#Labels:
+  company: networknuts
+
+namespace: default
+namePrefix: bike-
+nameSuffix: -dev
+commonAnnotations:
+  branch: master
+
+
+#### STEP #2 - Customize base for DEV
+
+vim ~/myapp/overlays/dev/namespace.yaml
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+
+
+vim ~/myapp/overlays/dev/deployment-dev.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 3 # Update the replica count to 3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        resources:
+          limits:
+            cpu: "200" # Lower CPU limit to 200m (0.2 CPU cores)
+            memory: "256Mi" # Lower memory limit to 256 MiB
+          requests:
+            cpu: "100" # Lower CPU request to 100m (0.1 CPU cores)
+            memory: "128Mi"
+
+
+vim ~/myapp/overlays/dev/service-dev.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: NodePort
+
+
+vim ~/myapp/overlays/dev/kustomization.yaml
+
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dev
+namePrefix: dev-
+resources:
+- ../../base
+- namespace.yaml
+patches:
+- path: deployment-dev.yaml
+- path: service-dev.yaml
+
+
+#### STEP #3 - Customize base for PROD
+
+
+vim ~/myapp/overlays/prod/namespace.yaml
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+
+
+vim ~/myapp/overlays/prod/deployment-prod.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 4 # Update the replica count to 3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        resources:
+          limits:
+            cpu: "200" # Lower CPU limit to 200m (0.2 CPU cores)
+            memory: "256Mi" # Lower memory limit to 256 MiB
+          requests:
+            cpu: "200" # Lower CPU request to 100m (0.1 CPU cores)
+            memory: "256Mi"
+
+
+vim ~/myapp/overlays/prod/service-prod.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: NodePort
+
+
+vim ~/myapp/overlays/prod/kustomization.yaml
+
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+namePrefix: prod-
+resources:
+- ../../base
+- namespace.yaml
+patches:
+- path: deployment-prod.yaml
+- path: service-prod.yaml
+
+
+#### CHECK AND APPLY
+
+cd ~/myapp
+kustomize build overlays/dev
+kustomize build overlays/prod
+
+kubectl apply -k overlays/dev
+kubectl apply -k overlays/prod
+
+

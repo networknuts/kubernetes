@@ -1,0 +1,20 @@
+###
+### Sometimes if your server has multiple nic's
+### it can show wrong ip address as internal ip address
+### use these steps to align/correct it
+### *** a very common issue in production ***
+
+Method #1 - Create a drop-in file 
+vim /etc/systemd/system/kubelet.service.d/10-kubelet.conf
+  ## add this line ##
+  KUBELET_CONFIG_ARGS='--node-ip=<node internal ip address>'
+
+Method #2 - Directory edit the configuration file 
+vim /etc/default/kubelet
+  ## add this line ##
+  KUBELET_CONFIG_ARGS='--node-ip=<node internal ip address>'
+
+Method #3 - Edit /var/lib/kubelet/kubeadm-flags.env
+add: --node-ip=<node internal ip address>
+
+In both cases run - systemctl daemon-reload && systemctl restart kubelet

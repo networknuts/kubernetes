@@ -1,0 +1,10 @@
+Either pass the --registry-mirror option when starting dockerd manually, 
+or edit /etc/docker/daemon.json (file need to be created) and add the 
+registry-mirrors key and value, to make the change persistent.
+
+
+{
+  "registry-mirrors": ["https://<my-docker-mirror-host>"]
+}
+
+Save the file and reload Docker for the change to take effect.

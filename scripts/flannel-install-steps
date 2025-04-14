@@ -1,0 +1,24 @@
+#!/bin/bash
+#FOR FLANNEL WITH HELM on KUBERNETES
+echo 
+echo "**********"
+echo "---- Installing Flannel using Helm ----"
+echo " --- no need to install calico now ---"
+echo "**********"
+
+#step 1 - install helm
+
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+
+#step 2 - install flannel using helm
+
+kubectl create ns kube-flannel
+kubectl label --overwrite ns kube-flannel pod-security.kubernetes.io/enforce=privileged
+
+helm repo add flannel https://flannel-io.github.io/flannel/
+#change podCidr to your IP range, if you wish
+helm install flannel --set podCidr="172.16.0.0/16" --namespace kube-flannel flannel/flannel

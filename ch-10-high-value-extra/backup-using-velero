@@ -1,0 +1,185 @@
+VELERO
+
+
+#1 - Client / Workstation component -
+
+wget https://github.com/vmware-tanzu/velero/releases/download/v1.13.0/velero-v1.13.0-linux-amd64.tar.gz
+
+tar -xvf velero-v1.13.0-linux-amd64.tar.gz
+
+cp velero-v1.13.0-linux-amd64/velero /usr/local/bin
+
+velero --help
+
+#2 - Install AWS CLI 
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+#3 - Configure AWS CLI using:
+  aws configure
+
+#4 - Create S3 bucket
+
+BUCKET=<YOUR_BUCKET>
+REGION=<YOUR_REGION>
+
+aws s3api create-bucket \
+    --bucket $BUCKET \
+    --region $REGION \
+    --create-bucket-configuration LocationConstraint=$REGION
+
+<make sure to remove "block public access>
+
+#5 - Set permissions for velero
+
+a. Create a IaM user
+
+aws iam create-user --user-name velero
+
+b. Attach policy to user velero
+
+cat > velero-policy.json <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeVolumes",
+                "ec2:DescribeSnapshots",
+                "ec2:CreateTags",
+                "ec2:CreateVolume",
+                "ec2:CreateSnapshot",
+                "ec2:DeleteSnapshot"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:PutObject",
+                "s3:AbortMultipartUpload",
+                "s3:ListMultipartUploadParts"
+            ],
+            "Resource": [
+                "arn:aws:s3:::${BUCKET}/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::${BUCKET}"
+            ]
+        }
+    ]
+}
+EOF
+
+
+c. Attaching policy to user velero
+
+aws iam put-user-policy \
+  --user-name velero \
+  --policy-name velero \
+  --policy-document file://velero-policy.json
+
+
+#6 - Create access key for user velero
+
+aws iam create-access-key --user-name velero
+
+<note down the access key and secret key>
+
+#7 - Create a file ~/credentials-velero
+
+[default]
+aws_access_key_id=<AWS_ACCESS_KEY_ID>
+aws_secret_access_key=<AWS_SECRET_ACCESS_KEY>
+
+
+#8 - Install and start velero
+
+velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.9.0 \
+    --bucket $BUCKET \
+    --backup-location-config region=$REGION \
+    --snapshot-location-config region=$REGION \
+    --secret-file ./credentials-velero
+
+#9 - Check logs & status of velero
+
+kubectl -n velero get all
+
+kubectl logs deployment/velero -n velero
+
+#10 - BACKUP examples
+
+-------- ONE -----------
+
+Create a namespace "prod" and run some applications there
+
+Take backup using velero:
+
+# velero backup create prod-backup --include-namespaces prod
+
+Check into S3 bucket you will see backup visible there.
+
+Now simulate a disaster, delete prod namespace
+
+# kubectl delete ns prod
+# kubectl get ns
+
+Perform a recovery
+
+# velero restore create --from-backup prod-backup
+
+------------- TWO -------------
+Backup & Restore entire cluster
+
+# velero backup create <backup-name>
+# velero restore create <backup-name>
+
+-------------- THREE --------------
+Backup can be done based on selectors
+
+# velero backup create <backup-name> --selector <key>=<value>
+
+----------- FOUR -----------------
+Schedule a backup
+
+#1 - Create a backup schedule - it uses cron syntax
+     creates a backup schedule that runs every day at 5am
+
+# velero schedule create morning-daily --schedule="0 5 * * *"
+
+#2 - Now trigger a backup using that schedule
+
+# velero backup create --from-schedule morning-schedule
+
+#### GET BACKUP LIST ####
+velero get backups
+
+
+#### DELETING BACKUPS #####
+
+# kubectl delete backup <backupName> -n <veleroNamespace> 
+
+will delete the backup custom resource only and will not delete any associated data from object/block storage
+
+# velero backup delete <backupName> 
+
+will delete the backup resource including all data in object/block storage
+
+############### DELETE VELERO ####################
+kubectl delete namespace/velero clusterrolebinding/velero
+kubectl delete crds -l component=velero
+
+

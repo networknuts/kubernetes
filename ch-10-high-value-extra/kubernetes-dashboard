@@ -1,0 +1,45 @@
+== FROM WORKSTATION MACHINE ==
+
+STEP #1 - Get dashboard
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+# kubectl -n kubernetes-dashboard expose deployment kubernetes-dashboard --name k8s-dash --type=NodePort
+
+# kubectl -n kubernetes-dashboard describe svc k8s-dash
+<note down the NodePort value>
+
+STEP #2 - run 
+kubectl proxy
+
+STEP #3 - Open Browser and access http://127.0.0.1:8001 OR https://<any-node-ip>:NodePort-value
+
+STEP #4 - You need a service account with cluster-admin rights. Create a file dash-srv-account.yaml
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+
+## file end here
+and apply it - kubectl create -f dash-srv-account.yaml
+
+STEP #5 - Create token for the user created
+kubectl -n kubernetes-dashboard create token admin-user
+
+STEP #6 - Now paste the "token" in the authentication method in browser
+

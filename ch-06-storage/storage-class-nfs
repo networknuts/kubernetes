@@ -1,0 +1,176 @@
+Storage Class with NFS
+
+1 - configure nfs server (10.0.0.99)
+
+apt install nfs-kernel-server
+
+#mkdir --mode=777 /k8sdata
+
+mkdir /k8sdata
+chown nobody.nobody /k8sdata
+chmod g+rwxs /k8sdata
+
+echo "/k8sdata *(rw,sync,no_subtree_check)" >> /etc/exports
+exportfs -a
+exportfs -r
+
+2 - check from manager / nodes
+apt update && apt install nfs-common -y
+showmount -e ip-address-nfs-server
+
+3. add nfs provisioner
+
+# install helm -
+curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+sudo apt-get install apt-transport-https --yes
+echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+
+# then
+# reference - https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
+
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm repo list
+
+# create a ns - storagenfs
+kubectl create ns storagenfs
+
+helm install nfs-subdir-external-provisioner \
+nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+--set nfs.server=10.0.0.99 \
+--set nfs.path=/k8sdata \
+--set storageClass.onDelete=true -n storagenfs
+
+kubectl get storageclass
+
+####
+
+4. create pvc for first application
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sample-nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 2Gi
+
+
+5. Create service and application
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-nginx-svc
+spec:
+  selector:
+    app: sc-nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  labels:
+    app: sc-nginx
+  name: nfs-nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sc-nginx
+  template:
+    metadata:
+      labels:
+        app: sc-nginx
+    spec:
+      volumes:
+      - name: nfs-test
+        persistentVolumeClaim:
+          claimName: sample-nfs-pvc
+      containers:
+      - image: nginx
+        name: nginx
+        volumeMounts:
+        - name: nfs-test # template.spec.volumes[].name
+          mountPath: /usr/share/nginx/html # mount inside of container
+          #readOnly: true # if enforcing read-only on volume
+        ports:
+        - containerPort: 80
+
+
+========
+Create another pvc and application
+
+# PVC for second application
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: apache-nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 1Gi
+
+
+# Service and Application
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache-svc
+spec:
+  selector:
+    app: apache
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  labels:
+    app: apache
+  name: webserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apache
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      volumes:
+      - name: web-root
+        persistentVolumeClaim:
+          claimName: apache-nfs-pvc
+      containers:
+      - image: lovelearnlinux/webserver:v1
+        name: apache
+        volumeMounts:
+        - name: web-root # template.spec.volumes[].name
+          mountPath: /var/www/html # mount inside of container
+          #readOnly: true # if enforcing read-only on volume
+        ports:
+        - containerPort: 80
+
+###
+
+

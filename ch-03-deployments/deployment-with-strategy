@@ -1,7 +1,9 @@
-apiVersion: apps/v1 
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello-deploy
+  annotations:
+    kubernetes.io/change-cause: "changing version to new"
 spec:
   replicas: 10
   selector:
@@ -22,6 +24,37 @@ spec:
       - name: hello-pod
         image: lovelearnlinux/webserver:v1
         ports:
-        - containerPort: 80        
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 100Mi
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /var/www/html/index.html
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 4
+          failureThreshold: 2
+          successThreshold: 1
+        livenessProbe:
+          exec:
+            command:
+            - cat
+            - /var/www/html/index.html
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 4
+          failureThreshold: 6
+          successThreshold: 1
 
 # kubectl set image deploy/hello-deploy hello-pod=lovelearnlinux/webserver:v2 --annotation=update image from v1 to v2
+# kubectl annotate deployments.apps hello-deploy kubernetes.io/change-cause="image changed to nginx:latest"
+# kubectl rollout history deployment hello-deploy --revision 5
+
+

@@ -8,7 +8,7 @@
 apt-get update -y
 # Variable Declaration
 
-KUBERNETES_VERSION="1.26.1-00"
+KUBERNETES_VERSION="1.29.0-1.1"
 
 # disable swap
 echo ""
@@ -43,21 +43,24 @@ EOF
 
 sudo sysctl --system
 
-cat <<EOF | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /
-EOF
-cat <<EOF | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
-deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /
-EOF
-
-curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$VERSION/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
-curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
-
+#### NEW location for keyrings
+echo
+echo
+echo "********"
+echo "INSTALLING CRI-O"
+echo "*********"
+echo
+echo
+echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
+mkdir -p /usr/share/keyrings
+curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg
+curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg
 sudo apt-get update -y
-sudo apt-get install cri-o cri-o-runc -y
-
+sudo apt-get install cri-o cri-o-runc cri-tools -y
 sudo systemctl daemon-reload
 sudo systemctl enable crio --now
+
 echo ""
 echo  "\033[4mConfiguring CRI-O to use dockerhub.\033[0m"
 echo ""
@@ -73,6 +76,13 @@ echo  "\033[4mCRI-O installed and configured.\033[0m"
 echo ""
 echo  "\033[4mSetting nameservers.\033[0m"
 echo ""
+#sudo systemctl stop systemd-resolved
+#sudo rm /etc/resolv.conf
+#create new /etc/resolv.conf with no loopback entry
+#systemctl start systemd-resolved
+#systemctl enable systemd-resolved
+
+
 apt install resolvconf -y
 systemctl start resolvconf.service
 systemctl enable resolvconf.service
@@ -90,15 +100,30 @@ echo ""
 echo  "\033[4mNOW, installing kubelet, kubectl and kubeadm.\033[0m"
 echo ""
 sudo apt-get install -y apt-transport-https ca-certificates curl
-#sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-# 93 changed to line below
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
-echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+sudo mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
-sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSION" kubeadm="$KUBERNETES_VERSION"
+sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubeadm="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSION"
 sudo apt-mark hold kubelet kubeadm kubectl
-# sudo apt-get update -y
+
 sudo apt-get install -y jq
+
+#echo "===="
+#echo ""
+#echo "updating /etc/default/kubelet"
+#echo ""
+#echo "===="
+#ip_address=$(ip route | grep 'ens34 ' | awk '{print $9}')
+#echo "" > /etc/default/kubelet
+#echo "KUBELET_EXTRA_ARGS='--node-ip=$ip_address'" > /etc/default/kubelet
+#systemctl daemon-reload && systemctl restart kubelet
+#echo ""
+#echo "===="
+#echo ""
+#echo "/etc/default/kubelet updated for internal IP address"
+#echo ""
+#echo "===="
 
 local_ip="$(ip --json a s | jq -r '.[] | if .ifname == "eth1" then .addr_info[] | if .family == "inet" then .local else empty end else empty end')"
 cat > /etc/default/kubelet << EOF
@@ -113,5 +138,3 @@ echo ""
 echo ""
 echo "REBOOTING in 10 seconds"
 sleep 10
-reboot
-

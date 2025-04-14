@@ -1,0 +1,48 @@
+#!/bin/bash
+
+KUBERNETES_VERSION=v1.31
+CRIO_VERSION=v1.31
+
+echo ""
+echo  "\033[4mDisabling Swap Memory.\033[0m"
+echo ""
+sudo swapoff -a
+sed -e '/swap/s/^/#/g' -i /etc/fstab
+echo
+echo
+echo "##################################################"
+echo "############# INSTALLING PACKAGES ################"
+echo "##################################################"
+echo
+echo
+apt-get update -y
+apt-get install -y software-properties-common curl
+curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/cri-o.list
+apt-get update -y
+apt-get install -y cri-o kubelet kubeadm kubectl cri-tools
+systemctl start crio.service
+modprobe br_netfilter
+sysctl -w net.ipv4.ip_forward=1
+echo
+echo
+echo "##################################################"
+echo "############# PACKAGES INSTALLED  ################"
+echo "##################################################"
+echo
+echo
+echo ""
+echo "===="
+echo "Generate token on manager using"
+echo "==="
+echo "kubeadm token create --print-join-command"
+echo ""
+echo ""

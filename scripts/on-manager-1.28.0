@@ -22,7 +22,19 @@ mkdir -p "$HOME"/.kube
 sudo cp -i /etc/kubernetes/admin.conf "$HOME"/.kube/config
 sudo chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
 
-# Install Calico Network Plugin Network
+# OPTION - 1 Install Calico overlay network
 
-echo "Now get calico.yaml and apply it"
+echo
+echo
+echo "********"
+echo "Install Pod Network - calico or flannel"
+echo "********"
+echo
+echo
+echo "for calico ..."
+echo "get calico.yaml and apply it"
 echo "kubectl apply -f calico.yaml"
+
+# OPTION - 2 Install Flannel overlay network
+echo "for flannel ..."
+echo "get instructions from flannel-install-steps file"

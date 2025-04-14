@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: guaranteed
+  labels:
+    app: apache
+spec:
+  containers:
+    - name: networknuts-app
+      image: lovelearnlinux/webserver:v1
+      resources:
+        limits:
+          memory: 250Mi
+          cpu: 200m
+        requests:
+          memory: 250Mi
+          cpu: 200m

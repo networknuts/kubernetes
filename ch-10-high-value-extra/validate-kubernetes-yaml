@@ -1,0 +1,34 @@
+=== VALIDATING YAML
+
+1. Kubeval
+
+option: a - Install locally
+
+	vim kubeval-install.sh
+
+
+	#!/bin/bash
+	wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+	tar xf kubeval-linux-amd64.tar.gz
+	sudo cp kubeval /usr/local/bin
+
+	### save and exit
+
+	Usage - 
+
+	# kubeval your-kubernetes-configuration.yaml
+
+option: b - Check online
+
+https://validkube.com/
+
+
+2. Kube-Score
+
+option: a - Check online
+
+https://kube-score.com/
+
+option: b - Install locally
+
+https://github.com/zegl/kube-score/releases
