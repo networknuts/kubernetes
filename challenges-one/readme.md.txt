@@ -1,5 +1,3 @@
-Here’s a beautifully formatted `README.md` version of your CKA 2025 Challenge tasks:
-
 ---
 
 # 🏆 Certified Kubernetes Administrator (CKA) 2025 - Challenge Tasks
