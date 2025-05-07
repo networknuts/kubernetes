@@ -30,14 +30,14 @@ sudo apt-get install helm
 # then
 # reference - https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
 
-helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm repo add nfs-store https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 helm repo list
 
 # create a ns - storagenfs
 kubectl create ns storagenfs
 
-helm install nfs-subdir-external-provisioner \
-nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+helm install nfs-sc \
+nfs-store/nfs-subdir-external-provisioner \
 --set nfs.server=10.0.0.99 \
 --set nfs.path=/k8sdata \
 --set storageClass.onDelete=true -n storagenfs
