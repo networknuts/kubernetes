@@ -1,0 +1,267 @@
+###################################################
+### KUBERNETES CLUSTER WITH EXTERNAL ETCD + TLS ###
+###################################################
+
+#1 - CA will be a separate machine - ubuntu server
+
+Install cfssl and cfssljson packages on CA server
+
+curl -s -L -o /usr/bin/cfssl https://github.com/cloudflare/cfssl/releases/download/v1.6.5/cfssl_1.6.5_linux_amd64
+curl -s -L -o /usr/bin/cfssljson https://github.com/cloudflare/cfssl/releases/download/v1.6.5/cfssljson_1.6.5_linux_amd64
+chmod +x /usr/bin/cfssl
+chmod +x /usr/bin/cfssljson
+
+
+#2 - Create CA
+
+vim ca-config.json
+
+{
+    "signing": {
+        "default": {
+            "expiry": "8760h"
+        },
+        "profiles": {
+            "etcd": {
+                "expiry": "8760h",
+                "usages": ["signing","key encipherment","server auth","client auth"]
+            }
+        }
+    }
+}
+
+
+vim ca-cert.json
+
+{
+  "CN": "etcd cluster",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "IN",
+      "L": "India",
+      "O": "networknuts",
+      "OU": "ETCD-CA",
+      "ST": "Delhi"
+    }
+  ]
+}
+
+ 
+cfssl gencert --initca ca-cert.json | cfssljson -bare ca
+
+This will generate these files:
+ca.pem
+ca-key.pem
+ca.csr
+
+#3 - Generate certificate for etcd nodes
+
+vim etcd-csr.json
+
+{
+  "CN": "etcd",
+  "hosts": [
+    "localhost",
+    "127.0.0.1",
+    "10.0.0.200",
+    "10.0.0.201",
+    "10.0.0.202"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "IN",
+      "L": "India",
+      "O": "networknuts",
+      "OU": "ETCD-CA",
+      "ST": "Delhi"
+    }
+  ]
+}
+
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=etcd etcd-csr.json | cfssljson -bare etcd
+
+This will generate these files:
+etcd.pem
+etcd-key.pem
+
+#4 - Need to move these files to all etcd cluster nodes
+
+scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.200:
+scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.201:
+scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.202:
+
+#5 - Now move these files to a common location on all three etcd nodes
+RUN on ALL NODES
+
+mkdir -p /etc/etcd/pki
+cd
+cp ca.pem etcd-key.pem etcd.pem /etc/etcd/pki/
+
+
+#6 - Install etcd on ALL etcd nodes
+
+{
+  ETCD_VER=v3.5.1
+  wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz"
+  tar zxf etcd-v3.5.1-linux-amd64.tar.gz
+  mv etcd-v3.5.1-linux-amd64/etcd* /usr/local/bin/
+  rm -rf etcd*
+}
+
+#7 - Create a service file with etcd node IP's
+
+{
+
+NODE_IP="10.0.0.20X"  ## KEEP changing this IP with node IP where you are executing this
+
+ETCD_NAME=$(hostname -s)
+
+ETCD1_IP="10.0.0.200"
+ETCD2_IP="10.0.0.201"
+ETCD3_IP="10.0.0.202"
+
+
+cat <<EOF >/etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/etcd \\
+  --name ${ETCD_NAME} \\
+  --cert-file=/etc/etcd/pki/etcd.pem \\
+  --key-file=/etc/etcd/pki/etcd-key.pem \\
+  --peer-cert-file=/etc/etcd/pki/etcd.pem \\
+  --peer-key-file=/etc/etcd/pki/etcd-key.pem \\
+  --trusted-ca-file=/etc/etcd/pki/ca.pem \\
+  --peer-trusted-ca-file=/etc/etcd/pki/ca.pem \\
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://${NODE_IP}:2380 \\
+  --listen-peer-urls https://${NODE_IP}:2380 \\
+  --advertise-client-urls https://${NODE_IP}:2379 \\
+  --listen-client-urls https://${NODE_IP}:2379,https://127.0.0.1:2379 \\
+  --initial-cluster-token etcd-cluster-1 \\
+  --initial-cluster etcdone=https://${ETCD1_IP}:2380,etcdtwo=https://${ETCD2_IP}:2380,etcdthree=https://${ETCD3_IP}:2380 \\
+  --initial-cluster-state new
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+}
+
+
+#8 - Restart damemon and etcd service
+
+systemctl daemon-reload
+systemctl restart etcd
+
+#9 - Check the status of cluster
+
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/etcd/pki/ca.pem \
+  --cert=/etc/etcd/pki/etcd.pem \
+  --key=/etc/etcd/pki/etcd-key.pem \
+  member list
+
+  endpoint status
+  endpoint health
+  put name alok
+  get name
+  del name
+
+
+
+#10 - (optional) Easier way is to create these environment variables
+
+export ETCDCTL_API=3 
+export ETCDCTL_ENDPOINTS=https://10.0.0.200:2379,https://10.0.0.201:2379,https://10.0.0.202:2379
+export ETCDCTL_CACERT=/etc/etcd/pki/ca.pem
+export ETCDCTL_CERT=/etc/etcd/pki/etcd.pem
+export ETCDCTL_KEY=/etc/etcd/pki/etcd-key.pem
+
+etcdctl member list
+etcdctl endpoint health
+etcdctl endpoint status
+
+
+#################################
+CLUSTER SETUP WITH EXTERNAL ETCD
+#################################
+
+1. Copy ca.pem etcd.pem etcd-key.pem to manager
+
+2. Install packages
+
+3. Copy ca.pem etcd.pem etcd-key.pem in /etc/kubernetes/pki/etcd/
+
+sudo mkdir -p /etc/kubernetes/pki/etcd
+sudo mv ca.pem etcd.pem etcd-key.pem /etc/kubernetes/pki/etcd/
+
+4. Pull images
+sudo kubeadm config images pull
+
+5. Create configuration file for kubeadm init 
+
+{
+
+ETCD1_IP="10.0.0.200"
+ETCD2_IP="10.0.0.201"
+ETCD3_IP="10.0.0.202"
+
+cat <<EOF > kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+networking:
+  podSubnet: "172.17.0.0/16"
+etcd:
+    external:
+        endpoints:
+        - https://${ETCD1_IP}:2379
+        - https://${ETCD2_IP}:2379
+        - https://${ETCD3_IP}:2379
+        caFile: /etc/kubernetes/pki/etcd/ca.pem
+        certFile: /etc/kubernetes/pki/etcd/etcd.pem
+        keyFile: /etc/kubernetes/pki/etcd/etcd-key.pem
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "10.0.0.100"
+EOF
+
+}
+
+## this will create a file kubeadm-config.yaml
+
+6. Run kubeadm init using the configuration file
+
+kubeadm init --config kubeadm-config.yaml --ignore-preflight-errors=all
+
+7. Install calico
+
+8. Join worker as normal
+
+
+
+### CHECK FROM ETCD NODES
+
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://10.0.0.200:2379 \
+  --cacert=/etc/etcd/pki/ca.pem \
+  --cert=/etc/etcd/pki/etcd.pem \
+  --key=/etc/etcd/pki/etcd-key.pem \
+  get / --prefix --keys-only
