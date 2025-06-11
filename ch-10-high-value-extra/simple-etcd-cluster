@@ -1,0 +1,66 @@
+## FOR THIS SETUP we are using these hostname and IP's. Change if you are using different
+
+etcdone = 10.0.0.200
+etcdtwo = 10.0.0.201
+etcdthree = 10.0.0.202
+
+### Download etcd binaries on ALL machines as root
+
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.37/etcd-v3.4.37-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.37-linux-amd64.tar.gz
+cd etcd-v3.4.37-linux-amd64/
+cp etcd* /usr/local/bin/
+
+etcd --version
+## check for etcd and etcdutl under /usr/local/bin
+
+## create systemd unit for etcd - ON ALL MACHINES - using root
+
+NODE_IP="10.0.0.20X"  ## change this IP to the machine's IP where you are running it
+
+ETCD_NAME=$(hostname -s)
+
+ETCD1_IP="10.0.0.200"
+ETCD2_IP="10.0.0.201"
+ETCD3_IP="10.0.0.202"
+
+
+sudo cat <<EOF >/etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/etcd \\
+  --name ${ETCD_NAME} \\
+  --initial-advertise-peer-urls http://${NODE_IP}:2380 \\
+  --listen-peer-urls http://${NODE_IP}:2380 \\
+  --advertise-client-urls http://${NODE_IP}:2379 \\
+  --listen-client-urls http://${NODE_IP}:2379,http://127.0.0.1:2379 \\
+  --initial-cluster-token etcd-cluster-1 \\
+  --initial-cluster etcdone=http://${ETCD1_IP}:2380,etcdtwo=http://${ETCD2_IP}:2380,etcdthree=http://${ETCD3_IP}:2380 \\
+  --initial-cluster-state new
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+## start the service
+
+{
+  systemctl daemon-reload
+  systemctl enable --now etcd
+}
+
+## check cluster status from any etcd cluster node
+
+etcdctl member list
+ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 member list
+ETCDCTL_API=3 etcdctl --endpoints=http://10.0.0.201:2379 member list
+ETCDCTL_API=3 etcdctl --endpoints=http://10.0.0.202:2379 member list
+ETCDCTL_API=3 etcdctl --endpoints=http://10.0.0.201:2379 put class kubernetes
+ETCDCTL_API=3 etcdctl --endpoints=http://10.0.0.201:2379 get class
+ETCDCTL_API=3 etcdctl --endpoints=http://10.0.0.201:2379 del class
