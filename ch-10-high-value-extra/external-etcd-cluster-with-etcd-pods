@@ -1,0 +1,208 @@
+External etcd as static pods
+
+########################
+Our Infra
+########################
+etcdone - 10.0.0.201
+etcdtwo - 10.0.0.202
+etcdthree - 10.0.0.203
+########################
+
+
+
+Step #1 - Swapoff on all nodes
+
+swapoff -a && sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+Step #2 - Enable bridging
+
+Step #3 - Install cri-o on all nodes
+
+{
+CRIO_VERSION=v1.32
+apt-get update
+apt-get install -y software-properties-common curl
+curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/cri-o.list
+apt-get update
+apt-get install -y cri-o  cri-tools kubelet kubeadm kubectl
+}
+
+Step #4 - Configure kubelet to manage etcd - on all nodes
+
+{
+
+mkdir -p /etc/systemd/system/kubelet.service.d/
+
+cat << EOF > /etc/systemd/system/kubelet.service.d/kubelet.conf
+# Replace "systemd" with the cgroup driver of your container runtime. The default value in the kubelet is "cgroupfs".
+# Replace the value of "containerRuntimeEndpoint" for a different container runtime if needed.
+#
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    enabled: false
+authorization:
+  mode: AlwaysAllow
+cgroupDriver: systemd
+address: 127.0.0.1
+containerRuntimeEndpoint: unix:///var/run/crio/crio.sock
+staticPodPath: /etc/kubernetes/manifests
+EOF
+
+cat << EOF > /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
+[Service]
+ExecStart=
+ExecStart=/usr/bin/kubelet --config=/etc/systemd/system/kubelet.service.d/kubelet.conf
+Restart=always
+EOF
+
+systemctl daemon-reload
+systemctl restart kubelet
+systemctl status kubelet
+}
+
+
+Step #4 - Create kubeadm config file for each host - run on HOST0
+
+{
+
+# Update HOST0, HOST1 and HOST2 with the IPs of your hosts
+export HOST0=10.0.0.201
+export HOST1=10.0.0.202
+export HOST2=10.0.0.203
+
+# Update NAME0, NAME1 and NAME2 with the hostnames of your hosts
+export NAME0="etcdone"
+export NAME1="etcdtwo"
+export NAME2="etcdthree"
+
+# Create temp directories to store files that will end up on other hosts
+mkdir -p /tmp/${HOST0}/ /tmp/${HOST1}/ /tmp/${HOST2}/
+
+HOSTS=(${HOST0} ${HOST1} ${HOST2})
+NAMES=(${NAME0} ${NAME1} ${NAME2})
+
+for i in "${!HOSTS[@]}"; do
+HOST=${HOSTS[$i]}
+NAME=${NAMES[$i]}
+cat << EOF > /tmp/${HOST}/kubeadmcfg.yaml
+---
+apiVersion: "kubeadm.k8s.io/v1beta4"
+kind: InitConfiguration
+nodeRegistration:
+    name: ${NAME}
+localAPIEndpoint:
+    advertiseAddress: ${HOST}
+---
+apiVersion: "kubeadm.k8s.io/v1beta4"
+kind: ClusterConfiguration
+etcd:
+    local:
+        serverCertSANs:
+        - "${HOST}"
+        peerCertSANs:
+        - "${HOST}"
+        extraArgs:
+        - name: initial-cluster
+          value: ${NAMES[0]}=https://${HOSTS[0]}:2380,${NAMES[1]}=https://${HOSTS[1]}:2380,${NAMES[2]}=https://${HOSTS[2]}:2380
+        - name: initial-cluster-state
+          value: new
+        - name: name
+          value: ${NAME}
+        - name: listen-peer-urls
+          value: https://${HOST}:2380
+        - name: listen-client-urls
+          value: https://${HOST}:2379
+        - name: advertise-client-urls
+          value: https://${HOST}:2379
+        - name: initial-advertise-peer-urls
+          value: https://${HOST}:2380
+EOF
+done
+
+}
+
+Step #5 - Generate CA certificate on etcdone
+
+kubeadm init phase certs etcd-ca
+
+This will create two files:
+/etc/kubernetes/pki/etcd/ca.crt
+/etc/kubernetes/pki/etcd/ca.key
+
+Step #6 - Create certificate for each member
+
+{
+
+kubeadm init phase certs etcd-server --config=/tmp/${HOST2}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${HOST2}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST2}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST2}/kubeadmcfg.yaml
+cp -R /etc/kubernetes/pki /tmp/${HOST2}/
+# cleanup non-reusable certificates
+find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete
+
+kubeadm init phase certs etcd-server --config=/tmp/${HOST1}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${HOST1}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST1}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST1}/kubeadmcfg.yaml
+cp -R /etc/kubernetes/pki /tmp/${HOST1}/
+find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete
+
+kubeadm init phase certs etcd-server --config=/tmp/${HOST0}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${HOST0}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST0}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST0}/kubeadmcfg.yaml
+# No need to move the certs because they are for HOST0
+
+# clean up certs that should not be copied off this host
+find /tmp/${HOST2} -name ca.key -type f -delete
+find /tmp/${HOST1} -name ca.key -type f -delete
+
+}
+
+Step #7 - Copy certificates to respective hosts - from etcdone
+
+## for etcdtwo
+
+scp -r /tmp/10.0.0.202/* alok@10.0.0.202:
+# go to etcdtwo
+sudo chown -R root:root pki
+sudo mv pki/ /etc/kubernetes/
+
+## for etcdthree
+
+scp -r /tmp/10.0.0.203/* alok@10.0.0.203:
+# go to etcdthree
+sudo chown -R root:root pki
+sudo mv pki/ /etc/kubernetes/
+
+
+
+Step #8 - Create static pod manifest - execute on individual hosts
+
+root@HOST0 $ kubeadm init phase etcd local --config=/tmp/${HOST0}/kubeadmcfg.yaml
+root@HOST1 $ kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
+root@HOST2 $ kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
+
+Step #9 - Check cluster health
+
+ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/etcd/peer.crt \
+--key /etc/kubernetes/pki/etcd/peer.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt \
+--endpoints https://${HOST0}:2379 endpoint health
+
+--endpoints https://10.0.0.203:2379 member list --write-out=table
