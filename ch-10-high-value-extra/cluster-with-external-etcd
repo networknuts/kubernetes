@@ -67,9 +67,9 @@ vim etcd-csr.json
   "hosts": [
     "localhost",
     "127.0.0.1",
-    "10.0.0.200",
     "10.0.0.201",
-    "10.0.0.202"
+    "10.0.0.202",
+    "10.0.0.203"
   ],
   "key": {
     "algo": "rsa",
@@ -95,9 +95,9 @@ etcd-key.pem
 
 #4 - Need to move these files to all etcd cluster nodes
 
-scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.200:
 scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.201:
 scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.202:
+scp ca.pem etcd.pem etcd-key.pem alok@10.0.0.203:
 
 #5 - Now move these files to a common location on all three etcd nodes
 RUN on ALL NODES
@@ -125,9 +125,9 @@ NODE_IP="10.0.0.20X"  ## KEEP changing this IP with node IP where you are execut
 
 ETCD_NAME=$(hostname -s)
 
-ETCD1_IP="10.0.0.200"
-ETCD2_IP="10.0.0.201"
-ETCD3_IP="10.0.0.202"
+ETCD1_IP="10.0.0.201"
+ETCD2_IP="10.0.0.202"
+ETCD3_IP="10.0.0.203"
 
 
 cat <<EOF >/etc/systemd/system/etcd.service
@@ -188,7 +188,7 @@ ETCDCTL_API=3 etcdctl \
 #10 - (optional) Easier way is to create these environment variables
 
 export ETCDCTL_API=3 
-export ETCDCTL_ENDPOINTS=https://10.0.0.200:2379,https://10.0.0.201:2379,https://10.0.0.202:2379
+export ETCDCTL_ENDPOINTS=https://10.0.0.201:2379,https://10.0.0.202:2379,https://10.0.0.203:2379
 export ETCDCTL_CACERT=/etc/etcd/pki/ca.pem
 export ETCDCTL_CERT=/etc/etcd/pki/etcd.pem
 export ETCDCTL_KEY=/etc/etcd/pki/etcd-key.pem
@@ -218,9 +218,9 @@ sudo kubeadm config images pull
 
 {
 
-ETCD1_IP="10.0.0.200"
-ETCD2_IP="10.0.0.201"
-ETCD3_IP="10.0.0.202"
+ETCD1_IP="10.0.0.201"
+ETCD2_IP="10.0.0.202"
+ETCD3_IP="10.0.0.203"
 
 cat <<EOF > kubeadm-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -260,7 +260,7 @@ kubeadm init --config kubeadm-config.yaml --ignore-preflight-errors=all
 ### CHECK FROM ETCD NODES
 
 ETCDCTL_API=3 etcdctl \
-  --endpoints=https://10.0.0.200:2379 \
+  --endpoints=https://10.0.0.201:2379 \
   --cacert=/etc/etcd/pki/ca.pem \
   --cert=/etc/etcd/pki/etcd.pem \
   --key=/etc/etcd/pki/etcd-key.pem \
