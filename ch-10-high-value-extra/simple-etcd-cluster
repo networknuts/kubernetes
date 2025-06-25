@@ -1,8 +1,8 @@
 ## FOR THIS SETUP we are using these hostname and IP's. Change if you are using different
 
-etcdone = 10.0.0.200
-etcdtwo = 10.0.0.201
-etcdthree = 10.0.0.202
+etcdone = 10.0.0.201
+etcdtwo = 10.0.0.202
+etcdthree = 10.0.0.203
 
 ### Download etcd binaries on ALL machines as root
 
@@ -21,9 +21,9 @@ NODE_IP="10.0.0.20X"  ## change this IP to the machine's IP where you are runnin
 
 ETCD_NAME=$(hostname -s)
 
-ETCD1_IP="10.0.0.200"
-ETCD2_IP="10.0.0.201"
-ETCD3_IP="10.0.0.202"
+ETCD1_IP="10.0.0.201"
+ETCD2_IP="10.0.0.202"
+ETCD3_IP="10.0.0.203"
 
 
 sudo cat <<EOF >/etc/systemd/system/etcd.service
