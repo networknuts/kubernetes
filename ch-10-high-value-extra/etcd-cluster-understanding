@@ -1,7 +1,7 @@
 ###### Our infra ######
-etcdone   = 10.0.0.200
-etcdtwo   = 10.0.0.201
-etcdthree = 10.0.0.202
+etcdone   = 10.0.0.201
+etcdtwo   = 10.0.0.202
+etcdthree = 10.0.0.203
 #######################
 
 
@@ -34,12 +34,12 @@ Description=etcd
 Type=exec
 ExecStart=/usr/local/bin/etcd \
   --name etcdone --data-dir=/var/lib/etcd \
-  --initial-advertise-peer-urls http://10.0.0.200:2380 \
-  --listen-peer-urls http://10.0.0.200:2380 \
-  --listen-client-urls http://10.0.0.200:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.0.200:2379 \
+  --initial-advertise-peer-urls http://10.0.0.201:2380 \
+  --listen-peer-urls http://10.0.0.201:2380 \
+  --listen-client-urls http://10.0.0.201:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.0.201:2379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster etcdone=http://10.0.0.200:2380,etcdtwo=http://10.0.0.201:2380,etcdthree=http://10.0.0.202:2380 \
+  --initial-cluster etcdone=http://10.0.0.201:2380,etcdtwo=http://10.0.0.202:2380,etcdthree=http://10.0.0.203:2380 \
   --initial-cluster-state new 
 
 Restart=on-failure
@@ -69,12 +69,12 @@ Description=etcd
 Type=exec
 ExecStart=/usr/local/bin/etcd \
   --name etcdtwo --data-dir=/var/lib/etcd \
-  --initial-advertise-peer-urls http://10.0.0.201:2380 \
-  --listen-peer-urls http://10.0.0.201:2380 \
-  --listen-client-urls http://10.0.0.201:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.0.201:2379 \
+  --initial-advertise-peer-urls http://10.0.0.202:2380 \
+  --listen-peer-urls http://10.0.0.202:2380 \
+  --listen-client-urls http://10.0.0.202:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.0.202:2379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster etcdone=http://10.0.0.200:2380,etcdtwo=http://10.0.0.201:2380,etcdthree=http://10.0.0.202:2380 \
+  --initial-cluster etcdone=http://10.0.0.201:2380,etcdtwo=http://10.0.0.202:2380,etcdthree=http://10.0.0.203:2380 \
   --initial-cluster-state new
 
 Restart=on-failure
@@ -104,12 +104,12 @@ Description=etcd
 Type=exec
 ExecStart=/usr/local/bin/etcd \
   --name etcdthree --data-dir=/var/lib/etcd \
-  --initial-advertise-peer-urls http://10.0.0.202:2380 \
-  --listen-peer-urls http://10.0.0.202:2380 \
-  --listen-client-urls http://10.0.0.202:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.0.202:2379 \
+  --initial-advertise-peer-urls http://10.0.0.203:2380 \
+  --listen-peer-urls http://10.0.0.203:2380 \
+  --listen-client-urls http://10.0.0.203:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.0.203:2379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster etcdone=http://10.0.0.200:2380,etcdtwo=http://10.0.0.201:2380,etcdthree=http://10.0.0.202:2380 \
+  --initial-cluster etcdone=http://10.0.0.201:2380,etcdtwo=http://10.0.0.202:2380,etcdthree=http://10.0.0.203:2380 \
   --initial-cluster-state new
 
 Restart=on-failure
@@ -127,12 +127,12 @@ systemctl enable etcd
 
 
 ### check status of etcd cluster
-etcdctl --endpoints=http://10.0.0.200:2379 member list --write-out=table
-etcdctl --endpoints=http://10.0.0.201:2379 endpoint status --write-out=table
+etcdctl --endpoints=http://10.0.0.201:2379 member list --write-out=table
 etcdctl --endpoints=http://10.0.0.202:2379 endpoint status --write-out=table
+etcdctl --endpoints=http://10.0.0.203:2379 endpoint status --write-out=table
 
 BETTER WAY:
-export ENDPOINTS=10.0.0.200:2379,10.0.0.201:2379,10.0.0.202:2379
+export ENDPOINTS=10.0.0.201:2379,10.0.0.202:2379,10.0.0.203:2379
 etcdctl --endpoints=$ENDPOINTS endpoint status --write-out=table
 
 #### Now check cluster HA  #### 
@@ -143,7 +143,7 @@ etcdctl --endpoints=$ENDPOINTS get name
 
 #2 - Bring etcdtwo down - poweroff
 
-#3 - Check endpoint status. It should show only two servers 10.0.0.200 & 10.0.0.202
+#3 - Check endpoint status. It should show only two servers 10.0.0.201 & 10.0.0.203
 etcdctl --endpoints=$ENDPOINTS endpoint status --write-out=table
  
 #4 - Still you should be able to see the data written to etcd in step #1
@@ -163,11 +163,11 @@ etcdctl --endpoints=$ENDPOINTS endpoint status --write-out=table
 #7 - You will lost access to data, as quorum is lost
 
 #8 - Check from etcdthree
-export ENDPOINTS=10.0.0.200:2379,10.0.0.201:2379,10.0.0.202:2379
+export ENDPOINTS=10.0.0.201:2379,10.0.0.202:2379,10.0.0.203:2379
 etcdctl --endpoints=$ENDPOINTS endpoint status --write-out=table
 etcdctl --endpoints=$ENDPOINTS get bike
 
 #9 - Get etcdone and etcdtwo UP again. Cluster will he healthy again and NEW leader will be selected
-export ENDPOINTS=10.0.0.200:2379,10.0.0.201:2379,10.0.0.202:2379
+export ENDPOINTS=10.0.0.201:2379,10.0.0.202:2379,10.0.0.203:2379
 etcdctl --endpoints=$ENDPOINTS endpoint status --write-out=table
 etcdctl --endpoints=$ENDPOINTS get bike
