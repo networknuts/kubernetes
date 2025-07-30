@@ -1,0 +1,49 @@
+RUN with non-root - where ever possible
+
+docker run -it --name boxone redhat/ubi8:latest /bin/bash
+
+capsh --print
+su -
+
+yum install nmap-ncat
+
+
+docker run -it --name boxone -u 1001 redhat/ubi8:latest /bin/bash
+
+capsh --print
+su -
+
+
+ALWAYS AVOID --privileged 
+
+The --privileged flag gives all capabilities to the container, and it also lifts all the limitations enforced by the device cgroup controller. In other words, the container can then do almost everything that the host can do.
+
+docker run --privileged -it --name boxone redhat/ubi8:latest /bin/bash
+
+## run these commands inside container
+id
+cat /proc/sys/vm/swappiness
+echo "61" > /proc/sys/vm/swappiness
+cat /proc/sys/vm/swappiness
+
+## Check from host - cat /proc/sys/vm/swappiness
+
+You just changed HOST's kernel parameter
+
+
+## Now try doing the same without --provileged flag
+
+
+## LINUX capabilities - https://man7.org/linux/man-pages/man7/capabilities.7.html
+docker run -it --name boxone redhat/ubi8:latest /bin/bash
+id ## running as root
+date +%T -s "08:09:10"  ## try to change date it will fail
+
+## we are running as root, still not able to change date
+## something else is blocking
+
+## Linux Capabilities split up the monolithic root privilege into 41 (change expected) privileges that can be individually granted to processes or files. Some of these privileges are fairly fine-grained, like CAP_AUDIT_READ, which controls the right to read audit logs. Others are wide-ranging, like CAP_SYS_ADMIN, which grants a wide array of privileged actions, such as the ability to mount and unmount filesystems on the host.
+
+Reference - https://man7.org/linux/man-pages/man7/capabilities.7.html
+
+docker run -it --name boxone --cap-add CAP_SYS_TIME redhat/ubi8:latest /bin/bash
