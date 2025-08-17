@@ -1,0 +1,5 @@
+public.ecr.aws/networknuts/networknuts/mysql
+public.ecr.aws/networknuts/networknuts/nginx
+public.ecr.aws/networknuts/networknuts/stress
+public.ecr.aws/networknuts/networknuts/webserver:v1
+public.ecr.aws/networknuts/networknuts/webserver:v2
