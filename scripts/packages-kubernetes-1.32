@@ -46,3 +46,6 @@ echo "==="
 echo "kubeadm token create --print-join-command"
 echo ""
 echo ""
+## calico yaml 
+## kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
