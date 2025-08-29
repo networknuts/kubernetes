@@ -1,4 +1,5 @@
 ---
+# kubectl apply -f https://docs.tigera.io/calico/latest/manifests/calico.yaml   
 # Source: calico/templates/calico-kube-controllers.yaml
 # This manifest creates a Pod Disruption Budget for Controller to allow K8s Cluster Autoscaler to evict
 
@@ -4776,4 +4777,5 @@ spec:
               command:
               - /usr/bin/check-status
               - -r
+
             periodSeconds: 10
