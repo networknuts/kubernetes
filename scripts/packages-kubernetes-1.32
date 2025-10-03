@@ -47,6 +47,10 @@ echo "==="
 echo "kubeadm token create --print-join-command"
 echo ""
 echo ""
+echo "### next steps ###"
+echo ""
+echo "sudo kubeadm config images pull"
+echo "sudo kubeadm init --apiserver-advertise-address 10.0.0.100 --pod-network-cidr 172.17.0.0/16"
 ## calico yaml 
 ## kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
