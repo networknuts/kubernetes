@@ -1,7 +1,7 @@
 #!/bin/bash
 
-KUBERNETES_VERSION=v1.33
-CRIO_VERSION=v1.33
+KUBERNETES_VERSION=v1.32
+CRIO_VERSION=v1.32
 
 echo ""
 echo  "\033[4mDisabling Swap Memory.\033[0m"
@@ -29,6 +29,7 @@ echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.i
     tee /etc/apt/sources.list.d/cri-o.list
 apt-get update -y
 apt-get install -y cri-o kubelet kubeadm kubectl cri-tools
+apt-mark hold kubelet kubeadm kubectl
 systemctl start crio.service
 modprobe br_netfilter
 sysctl -w net.ipv4.ip_forward=1
