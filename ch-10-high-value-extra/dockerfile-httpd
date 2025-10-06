@@ -1,0 +1,19 @@
+FROM redhat/ubi8:latest
+
+LABEL description="sample webserver for dev and test use only" \
+      maintainer="networknuts <info@networknuts.net>" \
+      usage="docker run -d --name name-of-container image-name"
+
+RUN yum install httpd -y && \
+    useradd alok -p redhat -c 'alok srivastava' && \
+    groupadd sales && \
+    usermod -aG sales alok && \
+    chown -R apache.apache /var/log/httpd /var/www/html /var/run/httpd
+
+COPY source/ /var/www/html/
+
+USER apache
+
+EXPOSE 80
+
+CMD ["httpd", "-D", "FOREGROUND"]
