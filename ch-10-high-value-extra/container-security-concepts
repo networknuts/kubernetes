@@ -16,7 +16,8 @@ su -
 
 ALWAYS AVOID --privileged 
 
-The --privileged flag gives all capabilities to the container, and it also lifts all the limitations enforced by the device cgroup controller. In other words, the container can then do almost everything that the host can do.
+The --privileged flag gives all capabilities to the container, and it also lifts all the limitations enforced by the device cgroup controller. 
+In other words, the container can then do almost everything that the host can do.
 
 docker run --privileged -it --name boxone redhat/ubi8:latest /bin/bash
 
