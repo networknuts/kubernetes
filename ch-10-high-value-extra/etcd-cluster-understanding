@@ -10,9 +10,9 @@ Step #1 - Install etcd on each node
 vim etcd-install.sh
 
 #!/bin/bash
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.37/etcd-v3.4.37-linux-amd64.tar.gz
-tar -xvf etcd-v3.4.37-linux-amd64.tar.gz
-cd etcd-v3.4.37-linux-amd64/
+wget https://github.com/etcd-io/etcd/releases/download/v3.6.5/etcd-v3.6.5-linux-amd64.tar.gz
+tar -xvf etcd-v3.6.5-linux-amd64.tar.gz
+cd etcd-v3.6.5-linux-amd64/
 cp etcd* /usr/local/bin/
 
 ## save and exit
