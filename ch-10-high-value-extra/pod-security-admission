@@ -1,0 +1,45 @@
+Enable PSA at cluster level
+
+Step #1 - Create a admission configuration file - /etc/kubernetes/cluster-level-psa.yaml
+          Keep the file where it is accessible by APIserver
+
+    apiVersion: apiserver.config.k8s.io/v1
+    kind: AdmissionConfiguration
+    plugins:
+    - name: PodSecurity
+      configuration:
+        apiVersion: pod-security.admission.config.k8s.io/v1
+        kind: PodSecurityConfiguration
+        defaults:
+          enforce: "restricted" # Or "baseline", "privileged"
+          enforceVersion: "latest"
+          audit: "restricted" # Optional: for audit mode
+          auditVersion: "latest"
+          warn: "restricted" # Optional: for warn mode
+          warnVersion: "latest"
+        exemptions:
+          usernames: []
+          runtimeClasses: []
+          namespaces: ["kube-system", "any-other-namespace-you-want"] # Example exemptions
+
+Step #2 - Configure the APIserver to use this configuration - edit
+          /etc/kubernetes/manifests/kube-apiserver.yaml
+
+    # Example snippet in kube-apiserver.yaml
+    spec:
+      containers:
+      - command:
+        - kube-apiserver
+        - --admission-control=NodeRestriction,PodSecurity # Ensure PodSecurity is included
+        - --admission-control-config-file=/etc/kubernetes/cluster-level-psa.yaml
+        # ... other API server arguments
+
+Step #3 - Restart APIserver
+
+############ Using KUBECTL
+
+kubectl label --dry-run=server --overwrite ns --all \
+pod-security.kubernetes.io/enforce=restricted
+
+# --dry-run=server is to understand what happens when you apply this
+
