@@ -7,3 +7,4 @@ INTERFACE="ens34"
 IP_ADDRESS=$(ip addr show "$INTERFACE" | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 
 echo "KUBELET_KUBEADM_ARGS=\"--node-ip=$IP_ADDRESS --container-runtime-endpoint=unix:///var/run/crio/crio.sock --pod-infra-container-image=registry.k8s.io/pause:3.10\"" > /var/lib/kubelet/kubeadm-flags.env
+systemctl daemon-reload && systemctl restart kubelet
