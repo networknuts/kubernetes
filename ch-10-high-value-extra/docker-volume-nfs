@@ -1,0 +1,9 @@
+Step #1 - Create NFS Share
+Step #2 - Create Docker volume using NFS share
+  docker volume create webdata \
+  --opt type=nfs --opt o=nfsvers=4,addr=10.0.0.99,rw \
+  --opt device=:/nfsdata
+Step #3 - Use it in docker container
+    docker run -d --name boxone --restart always \
+    --mount source=webdata,target=/var/www/html \
+    public.ecr.aws/networknuts/networknuts/webserver:v1
