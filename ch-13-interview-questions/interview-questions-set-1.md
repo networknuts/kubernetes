@@ -2,12 +2,7 @@ DevOps Interview Questions
 
 
 
-
-
-
-
-
-A curated list of essential DevOps interview questions covering AWS, Kubernetes, Terraform, Networking, CI/CD, and Cloud Architecture.
+DevOps interview questions covering AWS, Kubernetes, Terraform, Networking, CI/CD, and Cloud Architecture.
 
 📌 1. How would you isolate a network within an AWS VPC?
 
