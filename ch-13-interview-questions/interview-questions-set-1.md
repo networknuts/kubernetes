@@ -1,221 +1,131 @@
-DevOps Interview Questions & Practical Answers
+# DevOps Interview Preparation Guide
 
+A curated collection of DevOps interview questions and structured
+answers covering AWS, Kubernetes, Terraform, networking, operators,
+admission controllers, and more.
 
+## 🚀 Project Overview
 
+This repository contains commonly asked DevOps interview questions along
+with concise, high-quality answers.
 
+## ⭐ Key Features
 
+-   Well-structured Q&A format
+-   Cloud concepts (AWS, GCP)
+-   Kubernetes essentials
+-   Terraform usage & state management
+-   Security best practices
+-   CI/CD and rollback strategies
+-   Infrastructure & cost-optimization guidelines
 
+## 📥 Installation
 
+``` bash
+git clone https://github.com/your-username/devops-interview-guide.git
+cd devops-interview-guide
+```
 
+## 📘 Usage
 
+``` bash
+cat README.md
+```
 
-A curated set of real-world DevOps interview questions focused on cloud infrastructure, Kubernetes, Terraform, networking, cost optimization, and operational excellence.
-Compiled for professionals with 5+ years of hands-on experience maintaining servers, clusters, and cloud environments.
+# 📚 DevOps Interview Questions & Answers
 
-📘 Table of Contents
+## Q1. How would you isolate a network within an AWS VPC?
 
-AWS & Cloud Networking
+-   Use separate public/private subnets, NACLs, and security groups.
+-   Use dedicated subnets with restricted route tables.
+-   Optionally use AWS Network Firewall or Transit Gateway.
 
-Kubernetes
+## Q2. How do you handle rollbacks in Kubernetes?
 
-Security & Incident Response
-
-Terraform & IaC
-
-Cluster Management
-
-Cost Optimization
-
-Backup & Recovery
-
-Kubernetes Advanced Concepts
-
-AWS & Cloud Networking
-Q1. How would you isolate a network within an AWS VPC?
-
-Use public/private subnets, security groups, and NACLs.
-
-For strict isolation:
-
-Create dedicated subnets.
-
-Restrict routing with custom route tables.
-
-Use VPC peering limitations or Transit Gateway segmentation.
-
-For enhanced inspection:
-
-AWS Network Firewall, or
-
-TGW with separate route domains.
-
-Q3. Architectural differences between AWS VPC and GCP VPC?
-
-AWS VPC
-
-Region-scoped.
-
-Subnets tied to individual AZs.
-
-Cross-VPC requires explicit peering or TGW.
-
-GCP VPC
-
-Global resource spanning regions.
-
-Subnets are regional.
-
-Cross-region traffic works without peering.
-
-Q9. How do you connect two VPCs in AWS?
-
-Options:
-
-VPC Peering (simple, point-to-point)
-
-Transit Gateway (hub-and-spoke for multi-VPC scaling)
-
-PrivateLink (service-level private access)
-
-Kubernetes
-Q2. How do you handle rollbacks in Kubernetes?
-
-Use:
-
+``` bash
 kubectl rollout undo deployment/<name> --to-revision=<rev>
+```
 
+-   Kubernetes keeps previous ReplicaSets.
+-   Tools like ArgoCD, Helm, Spinnaker can handle rollbacks.
 
-Kubernetes stores previous ReplicaSets for rollback.
+## Q3. Architectural differences between GCP VPC and AWS VPC
 
-GitOps/CI/CD tools also support controlled rollbacks:
+-   AWS VPC: Region-scoped, AZ-specific subnets, explicit peering
+    required.
+-   GCP VPC: Global, regional subnets, cross-region communication
+    enabled by default.
 
-ArgoCD
+## Q4. What are network policies in Kubernetes?
 
-Helm
+-   Control pod-to-pod/service/external traffic.
+-   Act as firewalls for pods.
 
-Spinnaker
+## Q5. What would you do if you accidentally pushed credentials to a remote repo?
 
-Q4. What are Network Policies?
+-   Revoke/rotate keys immediately.
+-   Clean history using git filter-repo or BFG.
+-   Add secret scanning to CI/CD.
 
-Kubernetes IP-layer firewall rules.
+## Q6. How do you bring an existing resource into Terraform state?
 
-Control pod-to-pod, pod-to-service, and pod-to-external communication.
-
-Match traffic using labels.
-
-Enforced by CNI providers such as Calico, Cilium, or Weave.
-
-Security & Incident Response
-Q5. What would you do if you accidentally pushed credentials to a remote repo?
-
-Immediately revoke/rotate exposed credentials.
-
-Remove from history using:
-
-git filter-repo
-
-BFG Repo Cleaner
-
-Add CI/CD secrets scanning:
-
-GitGuardian
-
-Trufflehog
-
-GitHub Advanced Security
-
-Terraform: Infrastructure as Code
-Q6. How do you bring an existing resource into your Terraform state?
-
-Use:
-
+``` bash
 terraform import <resource_type>.<name> <resource_id>
+```
 
+Then run terraform plan.
 
-Run terraform plan to align configuration with state.
+## Q7. How would you upgrade a Kubernetes cluster?
 
-Q10. What is Terraform drift? How do you detect and fix it?
+-   Upgrade control plane → nodes.
+-   Cordon & drain nodes.
+-   Test in staging first.
 
-Drift = infrastructure changed manually outside Terraform.
+## Q8. Practices to reduce compute costs:
 
-Detect: terraform plan
+-   Auto Scaling
+-   Reserved/Spot instances
+-   Rightsizing
+-   Serverless (Lambda, Fargate)
+-   Monitoring unused resources
 
-Fix:
+## Q9. How would you connect two VPCs in AWS?
 
-Re-apply Terraform (terraform apply), or
+-   VPC Peering
+-   Transit Gateway
+-   PrivateLink
 
-Import manual changes into Terraform state.
+## Q10. Terraform state drift:
 
-Cluster Management
-Q7. How would you upgrade a Kubernetes cluster?
+-   Drift occurs when infra is changed manually.
+-   Detect with terraform plan.
+-   Fix by terraform apply or import.
 
-Upgrade control plane
+## Q11. Cluster backup:
 
-Upgrade worker nodes
+-   Velero for Kubernetes.
+-   AWS Backup, snapshots for databases.
+-   PVC snapshots for stateful workloads.
 
-Cordon + drain old nodes
+## Q12. Kubernetes Operators:
 
-Replace nodes if managed (EKS/GKE/AKS)
+-   Extend Kubernetes via CRDs.
+-   Automate deploy/upgrade/healing.
+-   Examples: Prometheus Operator, MySQL Operator.
 
-Always test in a staging cluster first
+## Q13. Admission Controllers:
 
-Cost Optimization
-Q8. Practices to reduce compute costs across an organization
+-   Intercept API requests before persisting.
+-   Mutating & Validating controllers.
+-   Enforce policies, inject sidecars.
 
-Autoscaling (HPA, VPA, EC2 ASG)
+## 🤝 Contributing
 
-Reserved/Spot instances
+1.  Fork the repo\
+2.  Create a branch\
+3.  Commit changes\
+4.  Open PR
 
-Rightsizing workloads
+## 📝 License
 
-Serverless (Lambda, Fargate)
-
-Monitoring unused resources:
-
-CloudWatch
-
-Grafana
-
-Prometheus
-
-Backup & Recovery
-Q11. How do you back up a cluster? What tools do you use?
-
-Kubernetes: Velero
-
-Databases: AWS Backup, native RDS/EBS snapshots
-
-Stateful apps: PVC snapshots
-
-Kubernetes Advanced Concepts
-Q12. Kubernetes Operators
-
-Extend Kubernetes using CRDs.
-
-Automate complex application lifecycles.
-
-Examples:
-
-Prometheus Operator
-
-MySQL Operator
-
-Elastic ECK
-
-Q13. Admission Controllers
-
-Intercept API requests before persistence in etcd.
-
-Types:
-
-Validating controllers → enforce checks.
-
-Mutating controllers → modify requests.
-
-Use cases:
-
-Security policy enforcement
-
-Sidecar injection
-
-Restrict privileged workloads
+MIT License
