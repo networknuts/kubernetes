@@ -81,7 +81,7 @@ Then run terraform plan.
 -   Cordon & drain nodes.
 -   Test in staging first.
 
-## Q8. Practices to reduce compute costs:
+## Q8. What practices would you propose to reduce compute costs across the org?
 
 -   Auto Scaling
 -   Reserved/Spot instances
@@ -95,29 +95,31 @@ Then run terraform plan.
 -   Transit Gateway
 -   PrivateLink
 
-## Q10. Terraform state drift:
+## Q10. What is Terraform state drift? How can you detect and solve it?
 
 -   Drift occurs when infra is changed manually.
 -   Detect with terraform plan.
 -   Fix by terraform apply or import.
 
-## Q11. Cluster backup:
+## Q11. How would you back up a cluster? What tools would you use?
 
 -   Velero for Kubernetes.
 -   AWS Backup, snapshots for databases.
 -   PVC snapshots for stateful workloads.
 
-## Q12. Kubernetes Operators:
+## Q12. What are Kubernetes Operators?
 
--   Extend Kubernetes via CRDs.
+-   Operators = controllers that extend Kubernetes API using CRDs (Custom Resource Definitions).
 -   Automate deploy/upgrade/healing.
 -   Examples: Prometheus Operator, MySQL Operator.
 
-## Q13. Admission Controllers:
+## Q13. What are Admission Controllers?
 
--   Intercept API requests before persisting.
--   Mutating & Validating controllers.
--   Enforce policies, inject sidecars.
+- Kubernetes plugins that intercept API requests before they’re persisted in etcd.
+Two types:
+Validating → validate requests.
+Mutating → modify requests.
+Example: Enforce security policies, inject sidecars, deny privileged pods, resource quota, limit range
 
 ## 🤝 Contributing
 
