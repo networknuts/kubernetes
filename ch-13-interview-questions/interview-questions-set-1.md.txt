@@ -1,0 +1,122 @@
+DevOps Interview Questions
+
+
+
+
+
+
+
+
+A curated list of essential DevOps interview questions covering AWS, Kubernetes, Terraform, Networking, CI/CD, and Cloud Architecture.
+
+📌 1. How would you isolate a network within an AWS VPC?
+
+Use public/private subnets, NACLs, security groups
+
+Create dedicated subnets + restrictive route tables
+
+Use AWS Network Firewall or Transit Gateway segmentation
+
+📌 2. How do you handle rollbacks in Kubernetes?
+
+kubectl rollout undo deployment/<name> --to-revision=<rev>
+
+Keep previous ReplicaSets for rollback
+
+Rollback automation via ArgoCD / Helm / Spinnaker
+
+📌 3. Architectural differences between GCP VPC and AWS VPC
+Feature	AWS VPC	GCP VPC
+Scope	Regional	Global
+Subnets	AZ-Based	Regional
+Cross-VPC Communication	Requires peering	Built-in global communication
+📌 4. What are Kubernetes Network Policies?
+
+Firewall-like controls for pod-to-pod, pod-to-service, pod-to-external traffic
+
+Works based on pod labels + IP rules
+
+📌 5. What to do if creds are accidentally pushed to a repo?
+
+Revoke/rotate credentials immediately
+
+Clean history using git filter-repo or BFG Cleaner
+
+Enable secrets scanning (GitGuardian, Trufflehog)
+
+📌 6. How to import existing infra into Terraform state?
+terraform import <resource_type>.<name> <resource_id>
+terraform import aws_instance.myec2 i-123456
+
+
+Then run terraform plan to align state
+
+📌 7. How to upgrade a Kubernetes cluster?
+
+Upgrade control plane
+
+Upgrade worker nodes
+
+Cordon + drain nodes
+
+Replace or upgrade node groups
+
+Always test in staging first
+
+📌 8. How to reduce compute costs across an organization?
+
+Auto Scaling
+
+Reserved / Spot instances
+
+Rightsize workloads
+
+Use serverless (Lambda, Fargate)
+
+Monitoring & resource cleanup
+
+📌 9. How to connect two VPCs in AWS?
+
+VPC Peering – simple, point-to-point
+
+Transit Gateway – scalable hub
+
+PrivateLink – service-level connectivity
+
+📌 10. What is Terraform state drift?
+
+Drift = manual infra changes outside Terraform
+
+Detect using terraform plan
+
+Fix by:
+
+Applying Terraform
+
+Importing external changes into state
+
+📌 11. How to back up a Kubernetes cluster?
+
+Velero for cluster + PVC backups
+
+AWS Backup / snapshots for databases (RDS, EBS)
+
+PVC volume snapshots for stateful workloads
+
+📌 12. What are Kubernetes Operators?
+
+Controllers extending K8s API using CRDs
+
+Automate full app lifecycle
+
+Examples: Prometheus Operator, MySQL Operator, ECK
+
+📌 13. What are Kubernetes admission controllers?
+
+Intercept API requests before they reach etcd
+
+Validating: allow/deny
+
+Mutating: modify requests
+
+Use cases: security policies, sidecar injection, blocking privileged pods
