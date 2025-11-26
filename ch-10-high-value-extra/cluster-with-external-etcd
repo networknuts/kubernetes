@@ -225,9 +225,13 @@ ETCD3_IP="10.0.0.203"
 cat <<EOF > kubeadm-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
+clusterName: "networknuts"
 networking:
   podSubnet: "172.17.0.0/16"
+  serviceSubnet: "10.96.0.0/16"
 etcd:
+# local:
+#   dataDir: "/var/lib/etcd"
     external:
         endpoints:
         - https://${ETCD1_IP}:2379
