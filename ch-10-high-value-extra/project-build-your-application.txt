@@ -1,0 +1,449 @@
+Build a Application
+
+Step #1 - Let’s build a simple API service in Go that responds to HTTP requests.
+
+vim main.go
+
+package main
+
+import (
+ "fmt"
+ "log"
+ "net/http"
+ "os"
+ "time"
+)
+
+func main() {
+ // Get pod name from environment
+ hostname, _ := os.Hostname()
+ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  fmt.Fprintf(w, "Hello from pod: %s\n", hostname)
+  fmt.Fprintf(w, "Path: %s\n", r.URL.Path)
+  fmt.Fprintf(w, "Time: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+ })
+ http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+  w.WriteHeader(http.StatusOK)
+  fmt.Fprintf(w, "Healthy")
+ })
+ http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+  // Simulate readiness check (in real app, check dependencies)
+  w.WriteHeader(http.StatusOK)
+  fmt.Fprintf(w, "Ready")
+ })
+ log.Println("Server starting on :8080")
+ log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+
+
+Step #2 - Create Dockerfile
+
+# Build stage
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /build
+COPY main.go .
+
+RUN go build -o app main.go
+
+# Final stage
+FROM alpine:3.18
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+COPY --from=builder /build/app .
+
+EXPOSE 8080
+
+CMD ["./app"]
+
+Step #3 - Build and push image
+
+docker build -t api-service:1.0 .
+
+# Or push to Docker Hub (Install a registry yourself)
+docker tag api-service:1.0 yourname/api-service:1.0
+docker push yourname/api-service:1.0
+
+Step #3 - Create a Pod
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api-pod-1
+  labels:
+    app: api-service
+    version: "1.0"
+
+spec:
+  containers:
+  - name: api
+    image: api-service:1.0
+    ports:
+    - containerPort: 8080
+    
+    # Resource requests (minimum needed)
+    resources:
+      requests:
+        cpu: 100m          # 100 millicores (0.1 CPU)
+        memory: 128Mi       # 128 megabytes
+      limits:
+        cpu: 500m          # Max 500 millicores
+        memory: 512Mi       # Max 512 megabytes
+    
+    # Liveness probe: restart if unhealthy
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    
+    # Readiness probe: ready to accept traffic?
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+Step #4 - Deploy, check and delete Pod
+
+kubectl apply -f pod.yaml
+kubectl get pods
+kubectl describe pod api-pod-1
+kubectl logs api-pod-1
+kubectp port-forward pod/api-pod-1 8080:8080
+curl http://localhost:8080 ## from another terminal
+kubectl delete pod api-pod-1
+
+Step #5 - Create Deployment - better way to run applications
+
+vim deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  labels:
+    app: api-service
+
+spec:
+  # How many replicas?
+  replicas: 3
+  
+  # Pod selector: which pods does this deployment manage?
+  selector:
+    matchLabels:
+      app: api-service
+  
+  # Pod template: what each pod looks like
+  template:
+    metadata:
+      labels:
+        app: api-service
+        version: "1.0"
+    
+    spec:
+      containers:
+      - name: boxone
+        image: api-service:1.0
+        ports:
+        - containerPort: 8080
+        
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  
+  # Rolling update strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Max 1 extra pod during update
+      maxUnavailable: 0    # Keep all pods available
+
+Step #6 - Deploy 
+
+kubectl apply -f deployment.yaml
+kubectl get pods
+
+Step #7 - Scale Pods
+
+kubectl scale deployment api-service --replicas 6
+kubectl get pods
+
+Step #8 - Update Image
+
+A. Update main.go  # added V2 in print
+
+
+package main
+
+import (
+ "fmt"
+ "log"
+ "net/http"
+ "os"
+ "time"
+)
+
+func main() {
+ // Get pod name from environment
+ hostname, _ := os.Hostname()
+ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  fmt.Fprintf(w, "Hello from V2 pod: %s\n", hostname)
+  fmt.Fprintf(w, "Path: %s\n", r.URL.Path)
+  fmt.Fprintf(w, "Time: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+ })
+ http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+  w.WriteHeader(http.StatusOK)
+  fmt.Fprintf(w, "Healthy")
+ })
+ http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+  // Simulate readiness check (in real app, check dependencies)
+  w.WriteHeader(http.StatusOK)
+  fmt.Fprintf(w, "Ready")
+ })
+ log.Println("Server starting on :8080")
+ log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+
+B. Build image again
+
+docker build -t api-service:2.0 .
+
+# Or push to Docker Hub (Install a registry yourself)
+docker tag api-service:2.0 yourname/api-service:2.0
+docker push yourname/api-service:2.0
+
+
+C. Set image in application
+
+kubectl set image deployment/api-service boxone=api-service:2.0
+
+kubectl rollout status deployment/api-service
+
+#Kubernetes updates pods one at a time. 
+#Old pods keep running while new ones start. Zero downtime.
+
+Step #9 - Rollback
+
+kubectl rollout undo deployment/api-service
+kubectl rollout status deployment/api-service
+
+Step #10 - Expose your application
+
+vim service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  labels:
+    app: api-service
+
+spec:
+  # Type of service
+  type: ClusterIP  # Internal access only (default)
+  
+  # Port mapping
+  ports:
+  - port: 80           # Service port (accessible at api-service:80)
+    targetPort: 8080   # Pod port
+    protocol: TCP
+  
+  # Which pods to route to
+  selector:
+    app: api-service
+
+
+Step #11 - Deploy Service
+
+kubectl apply -f service.yaml
+kubectl get service
+kubectl get ep api-service
+
+Step #12 - Access application from inside Cluster
+
+#create a temporary pod to check
+kubectl run -it --rm debug --image=alpine --restart=Never -- sh
+
+#inside the pod
+apk add curl
+curl http://ip-address-of-service
+
+#Each request routes to a random pod. 
+#The Service load-balances automatically.
+
+
+Step #13 - Change service type to NodePort
+
+type: NodePort
+ports:
+- port: 80
+  targetPort: 8080
+  nodePort: 30000  
+
+# Access at <node-ip>:30000
+
+Step #14 - Change service typt to LoadBalancer (cloud platform only)
+
+type: LoadBalancer
+ports:
+- port: 80
+  targetPort: 8080
+
+
+kubectl get svc 
+#check EXTERNAL-IP and access that IP
+
+Step #15 - Create ConfigMap
+
+vim api-config-map.yaml
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+
+data:
+  APP_NAME: "API Service"
+  LOG_LEVEL: "info"
+  DATABASE_HOST: "db.example.com"
+
+
+#apply 
+kubectl apply -f api-config-map.yaml
+
+Step #16 - Use ConfigMap in the application
+
+containers:
+- name: boxone
+  image: api-service:1.0
+  envFrom:
+  - configMapRef:
+      name: api-config
+
+#apply
+kubectl apply -f deployment.yaml
+
+
+Step #17 - Create Secrets for Sensitive things
+
+# Create secret
+kubectl create secret generic api-secret \
+  --from-literal=database_password=secret123 \
+  --from-literal=api_key=key456
+
+# Or via YAML
+kubectl create secret generic api-secret \
+  --from-literal=database_password=secret123 \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+
+Step #18 - Use Secret in application
+
+containers:
+- name: boxone
+  image: api-service:1.0
+  env:
+  - name: DATABASE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: api-secret
+        key: database_password
+
+
+#apply
+kubectl apply -f deployment.yaml
+
+Step #19 - View Logs
+
+# Last 100 lines - change pod name
+kubectl logs api-service-7d5c9c8c-4k2j9
+
+# Follow logs (tail -f)
+kubectl logs api-service-7d5c9c8c-4k2j9 -f
+
+# From all pods in deployment
+kubectl logs deployment/api-service --all-containers=true
+
+# Previous pod (if it crashed and restarted) - change pod name
+kubectl logs api-service-7d5c9c8c-4k2j9 --previous
+
+
+Step #20 - Pod Disruption Budgets. Protects pods during maintenance.
+
+vim api-service-pdb.yaml
+
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  spec:
+  minAvailable: 2  # Always keep 2 pods available
+  selector:
+    matchLabels:
+      app: api-service
+
+
+#apply
+kubectl apply -f api-service-pdb.yaml
+
+Step #21 - Common Troubleshooting
+
+A. Pod NOT starting
+
+kubectl describe pod <pod-name>
+# Check Events section for error
+
+# Common issues:
+# - Image not found: Check image name and registry
+# - Resource limits: Cluster full, reduce requests
+# - Probe failing: App not ready, increase initialDelaySeconds
+
+B. High CPU/MEMORY usage
+
+kubectl top pods
+kubectl top nodes
+
+# Solutions:
+# - Increase limits
+# - Optimize code
+# - Reduce replicas on that node
+
+C. Service NOT Accessible
+
+# Check service
+kubectl get svc
+
+# Check endpoints (pods the service routes to)
+kubectl get endpoints
+
+# Check selectors match pod labels
+kubectl get pods --show-labels
+
+
