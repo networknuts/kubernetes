@@ -1,0 +1,171 @@
+Kyverno + Kubernetes
+
+Kyverno is a policy engine built specifically for Kubernetes. It can validate, mutate, and generate Kubernetes resources without requiring new languages or external libraries. 
+
+Kyverno policies are written in YAML. There is no separate policy language and no need to maintain custom admission controllers.
+
+Kyverno supports validation, mutation, and generation rules. This gives teams a way to enforce best practices, manage configurations, and automate routine tasks directly in the cluster.
+
+Installing
+
+helm repo add kyverno https://kyverno.github.io/kyverno/
+helm repo update
+helm install kyverno kyverno/kyverno -n kyverno --create-namespace
+
+confirm -
+
+kubectl get all -n kyverno
+
+
+Example #1 - CPU/Memory limits are needed - validation policy
+
+
+vim kyverno-resource-limits-needed-policy.yaml
+
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-limits
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: "CPU and memory limits are required."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+
+
+kubectl apply -f kyverno-resource-limits-needed-policy.yaml
+
+Now try running a pod without resource block
+
+
+Example - 2 - Apply auto labels - Mutation policy
+
+vim kyverno-auto-label-policy.yaml
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: auto-add-team-label
+spec:
+  rules:
+    - name: add-label
+      match:
+        resources:
+          kinds:
+            - Pod
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              team: devops
+
+kubectl apply -f kyverno-auto-label-policy.yaml
+
+Create a pod that has cpu/memory limits, without label
+
+vim demo-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      resources:
+        limits:
+          cpu: "100m"
+          memory: "128Mi"
+
+kubectl apply -f demo-pod.yaml
+kubectl get pod demo --show-labels
+
+Example - 3 - Allow only selected image registries
+
+vim kyverno-selected-registry-policy.yaml
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-registries
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: allowed-registries
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: "Only images from ghcr.io or your-registry.com are allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/* | docker.io/lovelearnlinux/*"
+
+
+kubectl apply -f kyverno-selected-registry-policy.yaml
+
+Now, Try creating a Pod with an image from a public registry.
+
+
+Example - 4 - Required label on each namespace.
+
+vim kyverno-label-on-namespace-policy.yaml
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-namespace-labels
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-namespace-labels
+      match:
+        resources:
+          kinds:
+            - Namespace
+      validate:
+        message: "Namespaces must include the label 'owner'."
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"
+
+kubectl apply -f kyverno-label-on-namespace-policy.yaml
+
+Now try creating a namespace without label
+
+then try creating with label as key "owner"
+
+kubectl create ns demo --label=owner=networknuts
+
+==================
+Official Examples:
+==================
+
+Add Resources to pods
+https://github.com/kyverno/policies/raw/main//other/add-default-resources/add-default-resources.yaml
+
+Add labels to pods/service
+https://github.com/kyverno/policies/raw/main//other/add-labels/add-labels.yaml
+
+Add default resource quota and limit range to namespace
+https://github.com/kyverno/policies/raw/main//best-practices/add-ns-quota/add-ns-quota.yaml
+
+
+
