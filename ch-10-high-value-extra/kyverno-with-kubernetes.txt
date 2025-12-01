@@ -167,5 +167,7 @@ https://github.com/kyverno/policies/raw/main//other/add-labels/add-labels.yaml
 Add default resource quota and limit range to namespace
 https://github.com/kyverno/policies/raw/main//best-practices/add-ns-quota/add-ns-quota.yaml
 
+#### To list all kyverno policies
+kubectl get kyverno -A
 
 
