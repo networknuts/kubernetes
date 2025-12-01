@@ -1,22 +1,10 @@
 Installing Docker Scout
 
-Step #1
-https://github.com/docker/scout-cli/releases/download/v1.18.4/docker-scout_1.18.4_darwin_amd64.tar.gz
-gunzip docker-scout_1.18.4_darwin_amd64.tar.gz
+Step - As ROOT
 
 curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
 sh install-scout.sh
-
-Step #2
-
-vim ~/.docker/config.json
-
-{
-  "cliPluginsExtraDirs": [
-    "/home/USER/.docker/cli-plugins"
-  ]
-}
-
+cp /root/.docker/cli-plugins/docker-scout /usr/local/bin/
 
 systemctl daemon-reload
 systemctl restart docker
