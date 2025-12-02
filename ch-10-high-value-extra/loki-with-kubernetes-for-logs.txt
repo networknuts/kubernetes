@@ -224,10 +224,29 @@ kubectl get secret loki-grafana -n grafana-loki -o jsonpath="{.data.admin-passwo
 
 Select "explore" run query
 
+=================================
+Loki uses LogQL language for logs
+=================================
+
+Example #1 - Select all logs from namespace default
+
 {namespace="default"}
 
+Example #2 - Select logs from pods having label "app=my-service" from default namespace
 
+{app="my-service", namespace="default"}
 
+Example #3 - Get logs from pods having label "app=my-service" from default namespace having word curl 
+
+{app="my-service", namespace="default"} |= "curl"
+
+Example #4 - Get logs from pods having label "app=my-service" from default namespace not having work curl 
+
+{app="my-service", namespace="default"} != "curl"
+
+Example #5 - Select logs from webapp container in prod namespace having word curl
+
+{container="webapp",namespace="prod"} |= "curl" 
 ### Choose Loki when ###
 
 You want a simple, scalable, and cost-effective logging solution.
