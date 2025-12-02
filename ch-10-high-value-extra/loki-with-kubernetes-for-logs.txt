@@ -246,12 +246,18 @@ Example #4 - Get logs from pods having label "app=my-service" from default names
 
 Example #5 - Select logs from webapp container in prod namespace having word curl
 
-{container="webapp",namespace="prod"} |= "curl" 
+{pod="webapp",namespace="prod"} |= "curl" 
+{pod="multi",container="boxone", namespace="prod"}
 
 Example #6 - Checking events
 
 {source="event-exporter"}
 {source="event-exporter"} |= "Failed"
+
+Example #7 - Get logs of a particular node
+
+{node_name="your-node-name"}
+
 
 ### Choose Loki when ###
 
