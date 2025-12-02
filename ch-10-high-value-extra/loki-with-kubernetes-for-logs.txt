@@ -2,116 +2,154 @@ Kubernetes + Loki (for log management)
 
 ## USE Workstation machine for this lab
 
-1. You should have access to running Kubernetes cluster with helm
-
-2. Create a custom value file for Grafana. We don't need prometheus for this lab
-
-vim grafana-values.yaml
-
-# Disable Prometheus and Alertmanager
-prometheus:
-  enabled: false
-
-alertmanager:
-  enabled: false
-
-# Enable Grafana
-grafana:
-  enabled: true
-  adminUser: admin
-  adminPassword: admin
-  ingress:
-    enabled: false
-  additionalDataSources:
-    - name: Loki
-      type: loki
-      access: proxy
-      url: http://loki:3100
-
-3. Install Grafana
-
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install prometheus prometheus-community/kube-prometheus-stack --version 78.2.0 --namespace monitoring -f grafana-values.yaml --create-namespace
-
-
-4. Create custom values file for loki and promtail (promtail is agent for loki)
-
-vim loki-values.yaml
-
-# Enable Loki
-loki:
-  enabled: true
-  persistence:
-    enabled: true
-    size: 10Gi
-  config:
-    table_manager:
-      retention_deletes_enabled: true
-      retention_period: 168h # 7 days
-
-# Enable Promtail
-promtail:
-  enabled: true
-  serviceAccount:
-    create: true
-    name: promtail
-  config:
-    clients:
-      - url: http://loki:3100/loki/api/v1/push
-    positions:
-      filename: /tmp/positions.yaml
-  scrape_configs:
-    - job_name: kubernetes-pods
-      kubernetes_sd_configs:
-        - role: pod
-
-      pipeline_stages:
-        - docker: {} # decode Docker JSON logs (if using containerd/docker)
-
-      relabel_configs:
-        # Add namespace as a label
-        - source_labels: [__meta_kubernetes_namespace]
-          target_label: namespace
-
-        # Add pod name as a label
-        - source_labels: [__meta_kubernetes_pod_name]
-          target_label: pod
-
-        # Add container name as a label
-        - source_labels: [__meta_kubernetes_container_name]
-          target_label: container
-
-        # Keep Kubernetes pod labels as Promtail labels
-        - action: labelmap
-          regex: __meta_kubernetes_pod_label_(.+)
-
-        # Only keep pods that are running
-        - source_labels: [__meta_kubernetes_pod_container_status_running]
-          regex: true
-          action: keep
-
-        # Define the log file path
-        - source_labels:
-            - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_container_name
-          target_label: __path__
-          replacement: /var/log/pods/*$1/*/*.log
-
-
-5. Install Loki
+1. Add Grafana repo
 
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
-helm install loki grafana/loki-stack -n monitoring --create-namespace -f loki-values.yaml
+helm search repo loki  # we will use grafana/loki stack
+
+2. Create custom values for loki
+
+helm show values grafana/loki-stack > loki-values.yaml
+
+vim loki-values.yaml
+
+#FILE START HERE
+
+test_pod:
+  enabled: true
+  image: bats/bats:1.8.2
+  pullPolicy: IfNotPresent
+
+loki:
+  enabled: true
+  isDefault: true
+  url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  datasource:
+    jsonData: "{}"
+    uid: ""
 
 
-6. Confirm pods are running
+promtail:
+  enabled: true
+  config:
+    logLevel: info
+    serverPort: 3101
+    clients:
+      - url: http://{{ .Release.Name }}:3100/loki/api/v1/push
 
-kubectl -n monitoring get pods
+fluent-bit:
+  enabled: false
+
+grafana:
+  enabled: true
+  sidecar:
+    datasources:
+      label: ""
+      labelValue: ""
+      enabled: true
+      maxLines: 1000
+  image:
+    tag: 10.3.3
+  service:
+    type: NodePort
+
+prometheus:
+  enabled: false
+  isDefault: false
+  url: http://{{ include "prometheus.fullname" .}}:{{ .Values.prometheus.server.service.servicePort }}{{ .Values.prometheus.server.prefixURL }}
+  datasource:
+    jsonData: "{}"
+
+filebeat:
+  enabled: false
+  filebeatConfig:
+    filebeat.yml: |
+      # logging.level: debug
+      filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+      output.logstash:
+        hosts: ["logstash-loki:5044"]
+
+logstash:
+  enabled: false
+  image: grafana/logstash-output-loki
+  imageTag: 1.0.1
+  filters:
+    main: |-
+      filter {
+        if [kubernetes] {
+          mutate {
+            add_field => {
+              "container_name" => "%{[kubernetes][container][name]}"
+              "namespace" => "%{[kubernetes][namespace]}"
+              "pod" => "%{[kubernetes][pod][name]}"
+            }
+            replace => { "host" => "%{[kubernetes][node][name]}"}
+          }
+        }
+        mutate {
+          remove_field => ["tags"]
+        }
+      }
+  outputs:
+    main: |-
+      output {
+        loki {
+          url => "http://loki:3100/loki/api/v1/push"
+          #username => "test"
+          #password => "test"
+        }
+        # stdout { codec => rubydebug }
+      }
+
+# proxy is currently only used by loki test pod
+# Note: If http_proxy/https_proxy are set, then no_proxy should include the
+# loki service name, so that tests are able to communicate with the loki
+# service.
+proxy:
+  http_proxy: ""
+  https_proxy: ""
+  no_proxy: ""
 
 
-7. For testing lets deploy a application with generate logs after every 5 seconds
+#FILE ENDS HERE
+#KEY POINTS IN loki-values.yaml file
+
+1. Loki is enabled and configured with readiness and liveness probes for health checking.
+2. Promtail is enabled to forward logs from Kubernetes nodes to Loki.
+3. Grafana is enabled with a NodePort service to allow access to the Grafana UI from outside the cluster.
+4. Prometheus, Filebeat, and Logstash are explicitly disabled.
+
+3. Deploy Helm chart
+
+helm upgrade --install --values loki-values.yaml loki grafana/loki-stack -n grafana-loki --create-namespace
+
+
+4. Check all pods are running
+
+kubectl get pods -n grafana-loki
+
+5. Deploy a application which will generate logs after every 5 seconds
+
 
 kubectl apply -f - <<'EOF'
 apiVersion: apps/v1
@@ -168,13 +206,27 @@ spec:
   type: ClusterIP
 EOF
 
-8. Port forward and check logs
+6. Find the nodeport assigned to Grafana
 
-kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80 >/dev/null 2>&1 &
+kubectl get svc loki-grafana -n grafana-loki  -o jsonpath="{.spec.ports[0].nodePort}"
 
-9. Access Grafana - http://localhost:3000 and from "explore" section run this query
+7. Access Grafana
+
+http://<IP>:<NODE-PORT>
+
+#get grafana username / password
+kubectl get secret loki-grafana -n grafana-loki -o jsonpath="{.data.admin-user}" | base64 --decode
+kubectl get secret loki-grafana -n grafana-loki -o jsonpath="{.data.admin-password}" | base64 --decode
+
+8. Check connection -> data source
+
+<you should see loki>
+
+Select "explore" run query
 
 {namespace="default"}
+
+
 
 ### Choose Loki when ###
 
