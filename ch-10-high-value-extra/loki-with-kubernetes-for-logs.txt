@@ -1,0 +1,184 @@
+Kubernetes + Loki (for log management)
+
+## USE Workstation machine for this lab
+
+1. You should have access to running Kubernetes cluster with helm
+
+2. Create a custom value file for Grafana. We don't need prometheus for this lab
+
+vim grafana-values.yaml
+
+# Disable Prometheus and Alertmanager
+prometheus:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+# Enable Grafana
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: admin
+  ingress:
+    enabled: false
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+
+3. Install Grafana
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack --version 78.2.0 --namespace monitoring -f grafana-values.yaml --create-namespace
+
+
+4. Create custom values file for loki and promtail (promtail is agent for loki)
+
+vim loki-values.yaml
+
+# Enable Loki
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 10Gi
+  config:
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h # 7 days
+
+# Enable Promtail
+promtail:
+  enabled: true
+  serviceAccount:
+    create: true
+    name: promtail
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    positions:
+      filename: /tmp/positions.yaml
+  scrape_configs:
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+
+      pipeline_stages:
+        - docker: {} # decode Docker JSON logs (if using containerd/docker)
+
+      relabel_configs:
+        # Add namespace as a label
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: namespace
+
+        # Add pod name as a label
+        - source_labels: [__meta_kubernetes_pod_name]
+          target_label: pod
+
+        # Add container name as a label
+        - source_labels: [__meta_kubernetes_container_name]
+          target_label: container
+
+        # Keep Kubernetes pod labels as Promtail labels
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+
+        # Only keep pods that are running
+        - source_labels: [__meta_kubernetes_pod_container_status_running]
+          regex: true
+          action: keep
+
+        # Define the log file path
+        - source_labels:
+            - __meta_kubernetes_pod_uid
+            - __meta_kubernetes_container_name
+          target_label: __path__
+          replacement: /var/log/pods/*$1/*/*.log
+
+
+5. Install Loki
+
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install loki grafana/loki-stack -n monitoring --create-namespace -f loki-values.yaml
+
+
+6. Confirm pods are running
+
+kubectl -n monitoring get pods
+
+
+7. For testing lets deploy a application with generate logs after every 5 seconds
+
+kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-generator
+  namespace: default
+  labels:
+    app: log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-generator
+  template:
+    metadata:
+      labels:
+        app: log-generator
+    spec:
+      containers:
+        - name: log-generator
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              while true; do
+                ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ");
+                echo "{\"timestamp\":\"${ts}\",\"level\":\"info\",\"message\":\"Hello from log-generator! Testing Loki JSON logs.\"}";
+                sleep 5;
+              done
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-generator
+  namespace: default
+  labels:
+    app: log-generator
+spec:
+  selector:
+    app: log-generator
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+EOF
+
+8. Port forward and check logs
+
+kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80 >/dev/null 2>&1 &
+
+9. Access Grafana - http://localhost:3000 and from "explore" section run this query
+
+{namespace="default"}
+
+### Choose Loki when ###
+
+You want a simple, scalable, and cost-effective logging solution.
+You’re operating in a cloud-native environment.
+You’re already using Grafana and Prometheus.
+Your log analysis needs are straightforward.
