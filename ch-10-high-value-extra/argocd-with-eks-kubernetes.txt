@@ -1,0 +1,75 @@
+############################
+KUBERNETES + ARGOCD
+############################
+
+
+eksctl create cluster \
+  --name cluster-name \
+  --version 1.32 \
+  --region ap-south-1 \
+  --nodegroup-name cluster-name-nodes \
+  --node-type t3.medium \
+  --nodes 2 \
+  --nodes-min 1 \
+  --nodes-max 4 \
+  --managed
+
+#get your cluster url
+
+https://kubernetes.default.svc  #if argocd is running on the same eks cluster
+
+aws eks describe-cluster --name cluster-name --region ap-south-1
+
+aws eks describe-cluster --name cluster-name --query "cluster.endpoint" --output text
+
+# Install ARGO-CD in your cluster using helm
+
+helm repo add argo https://argoproj.github.io/argo-helm
+
+helm repo update
+kubectl create ns argocd
+
+vim argo-cd-values.yaml
+  server:
+    service:
+      type: LoadBalancer
+
+helm -n argocd install argocd-demo argo/argo-cd -f argo-cd-values.yaml
+
+Get the password of user=admin to access argocd
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# Access Argocd Dashboard using loadbalancer URL and supply:
+username = admin
+password = your-password
+
+# Create a application using argro-cd GUI
+
+
+1. Create a Git Repository: First, create a Git repository that contains your Kubernetes manifests. This repository will serve as the source for ArgoCD to deploy your application.
+
+Create an Application in ArgoCD:
+
+In the ArgoCD dashboard, click on New App and fill in the following details:
+
+Application Name: testapp
+Project: default
+Sync Policy: Manual or Automatic (your choice)
+Repository URL: https://github.com/networknuts/argocd   #you can use your git repo 
+Path: releaseone #for our git repo
+Cluster URL: https://kubernetes.default.svc  #if argocd is running on the same eks cluster
+Namespace: namespace where the application should be deployed
+
+
+Select Create and then SYNC
+
+Your application will be deployed in EKS cluster. 
+Access the application on LoadBalancer service URL
+
+# Now do some changes in the manifest and push on Git
+# Argocd will pick the changes and apply it on your application
+
+
+
+
+
