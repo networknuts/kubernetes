@@ -1,0 +1,140 @@
+#!/bin/bash
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo " Disabling SWAP"
+echo ""
+echo "#######################################"
+echo ""
+sudo swapoff -a
+sed -e '/swap/s/^/#/g' -i /etc/fstab
+echo
+echo
+
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward = 1
+EOF
+
+sudo sysctl --system
+
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo " setting Kubernetes version = 1.35"
+echo " and"
+echo " installing packages"
+echo ""
+echo "#######################################"
+echo ""
+
+
+KUBERNETES_VERSION=v1.35
+CRIO_VERSION=v1.35
+
+
+apt-get update -y
+apt-get install -y software-properties-common curl
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/kubernetes.list
+
+curl -fsSL https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key |
+    gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/ /" |
+    tee /etc/apt/sources.list.d/cri-o.list
+
+sudo apt-get update -y
+sudo apt-get install -y cri-o cri-tools kubelet kubeadm kubectl -y
+
+sudo apt-mark hold kubelet kubeadm kubectl
+sudo systemctl start crio.service
+sudo modprobe br_netfilter
+sudo sysctl -w net.ipv4.ip_forward=1
+
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo " Creating cluster configuration file"
+echo " kubeadm-config.yaml"
+echo ""
+echo "#######################################"
+echo ""
+
+cat <<EOF > kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+clusterName: "networknuts"
+networking:
+  podSubnet: "172.17.0.0/16"
+  serviceSubnet: "10.96.0.0/16"
+etcd:
+  local:
+    dataDir: "/var/lib/etcd"
+#    external:
+#        endpoints:
+#        - https://${ETCD1_IP}:2379
+#        - https://${ETCD2_IP}:2379
+#        - https://${ETCD3_IP}:2379
+#        caFile: /etc/kubernetes/pki/etcd/ca.pem
+#        certFile: /etc/kubernetes/pki/etcd/etcd.pem
+#        keyFile: /etc/kubernetes/pki/etcd/etcd-key.pem
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "10.0.0.100"
+EOF
+
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo " Pulling configuration images"
+echo " and"
+echo " Starting Cluster using kubeadm init"
+echo ""
+echo "#######################################"
+echo ""
+
+
+sudo kubeadm config images pull
+sleep 5
+sudo kubeadm init --config kubeadm-config.yaml --ignore-preflight-errors=all
+sleep 20
+
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo "      setting up home directory"
+echo " and copy /etc/kubernetes/admin.conf"
+echo "        into ~/.kube/config"
+echo ""
+echo "#######################################"
+echo ""
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+echo "########################################"
+echo ""
+echo "Installing Calico as CNI"
+echo ""
+echo "########################################"
+sleep 30
+kubectl apply -f https://docs.tigera.io/calico/latest/manifests/calico.yaml
+
+echo "#######################################"
+echo "#######################################"
+echo ""
+echo " ALL SET "
+echo " as root user - use"
+echo " kubectl get nodes "
+echo ""
+echo "#######################################"
+echo ""
+
+
