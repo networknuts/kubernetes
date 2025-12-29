@@ -88,6 +88,17 @@ apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
 localAPIEndpoint:
   advertiseAddress: "10.0.0.100"
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serializeImagePulls: false
+maxParallelImagePulls: 10 # optional value
+serializeImagePulls: false #pull images in parallel
+evictionHard:
+    memory.available:  "200Mi" #memory on node less than 200Mi
+    nodefs.available:  "20%" #filesystem space less than 20%
+    nodefs.inodesFree: "5%" #free inodes drops below 5%
+
 EOF
 
 echo "#######################################"

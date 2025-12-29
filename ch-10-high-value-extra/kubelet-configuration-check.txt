@@ -1,0 +1,16 @@
+======
+Confirm kubelet settings
+
+## FROM MANAGER
+A- 
+ - terminal one - kubectl proxy
+ - terminal two - curl -X GET http://127.0.0.1:8001/api/v1/nodes/<node-name>/proxy/configz | jq .
+
+B-
+cat /var/lib/kubelet/config.yaml
+
+## SPECIFIC NODE kubelet configuration can be changed by adding
+--serialize-image-pulls=false 
+to - /var/lib/kubelet/kubeadm-flag.env
+
+
