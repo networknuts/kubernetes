@@ -92,6 +92,11 @@ localAPIEndpoint:
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 serializeImagePulls: false
+
+##pin kubelet on specific core
+#cpuManagerPolicy: static
+#reservedSystemCPUs: "0,1" # Explicitly reserves CPU cores 0 and 1 for system and Kubelet daemons
+
 maxParallelImagePulls: 10 # optional value
 serializeImagePulls: false #pull images in parallel
 evictionHard:
