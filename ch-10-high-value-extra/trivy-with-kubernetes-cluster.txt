@@ -1,0 +1,133 @@
+#Integrating trivy with Kubernetes project
+
+
+Step #1  - Install Trivy
+
+{
+sudo apt-get install wget gnupg
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy
+}
+
+Step #2 - we can scan our entire Kubernetes cluster for vulnerabilities and get a summary of the scan
+
+trivy k8s --tolerations node-role.kubernetes.io/control-plane=:NoSchedule --report summary
+trivy k8s --tolerations node-role.kubernetes.io/control-plane=:NoSchedule --report all
+
+trivy k8s --tolerations node-role.kubernetes.io/control-plane=:NoSchedule --include-namespaces kube-system --report summary
+trivy k8s --tolerations node-role.kubernetes.io/control-plane=:NoSchedule --include-namespaces kube-system --report all
+
+trivy k8s --tolerations node-role.kubernetes.io/control-plane=:NoSchedule --severity=CRITICAL --report=summary
+
+
+Step #3 - Check against your project directory / files
+
+mkdir project
+cd project
+
+cat <<EOF > depone.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+EOF
+
+
+trivy config depone.yaml
+
+# Now, update depone.yaml as per recommendation
+
+image: nginx:1.14.2
+securityContext:
+  readOnlyRootFilesystem: true      
+  allowPrivilegeEscalation: false   
+  runAsNonRoot: true                
+  runAsUser: 101
+  capabilities:
+    drop:
+    - ALL  
+
+#update again and try again
+
+trivy config depone.yaml
+
+Step #4 - Create trivy config file
+
+vim ~/project/trivy.yaml - in your project root directory
+
+scan:
+ scanners:
+   - vuln
+   - secret
+   - misconfig
+
+severity:
+ - CRITICAL
+ - HIGH
+ - MEDIUM
+
+vulnerability:
+ ignore-unfixed: true
+
+image:
+ removed-pkgs: true
+
+misconfiguration:
+ checks:
+   - kubernetes
+
+format: table
+
+exit-code: 1
+
+##file end here
+
+###################################################################################
+# tells Trivy to scan for vulnerabilities, secrets, and misconfigurations,        #
+# and to alert on Critical, High, and Medium severity vulnerabilities.            #
+# In addition, it tells Trivy to ignore vulnerabilities without available fixes,  #
+# check for removed packages that might still have CVEs,                          #
+# apply Kubernetes-specific checks, and output results in a table format.         #
+# Last but not least, it tells Trivy to exit with an exit code of 1 (error)       #
+# if issues are present, making it very useful for CI/CD pipelines.               #
+###################################################################################
+
+#check again
+
+trivy config --config trivy.yaml depone.yaml
+
+You can also mention what checks you want to ignore by creating a .trivyignore file. 
+This is especially useful if you want to exclude false positives or known vulnerabilities.
+
+.trivyignore
+
+KSV-####
+
+#check again
+
+trivy config --config trivy.yaml --ignorefile .trivyignore depone.yaml
+
+
+Security in Kubernetes is an ongoing process that requires using the right tools and workflows. 
+Trivy provides a solid foundation for implementing shift-left, 
+enabling you to scan for vulnerabilities in images, manifests, and even infrastructure-as-code.
+
