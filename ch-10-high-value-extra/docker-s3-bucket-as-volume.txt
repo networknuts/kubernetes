@@ -1,0 +1,40 @@
+Using S3 bucket as Docker volume
+================================
+
+Step #1 - Install s3fs-fuse
+
+apt-get install s3fs 
+
+Step #2 - Create a S3 bucket with public read access policy
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::DOC-EXAMPLE-BUCKET/*"
+        }
+    ]
+}
+
+
+Step #3 - Create AWS Access Key and Secret Key for a IaM user with permissions to access S3.
+
+echo "aws-access-key:aws-secret-key" > ~/.passwd-s3fs
+chmod 600 ~/.passwd-s3fs
+
+Step #4 - Mount it in a directory
+
+mkdir /mnt/mys3bucket
+s3fs your-s3-bucket-name /mnt/mys3bucket -o allow_other,url=https://s3.amazonaws.com
+
+df -h
+
+Step #5 - Use as a bind mount
+
+docker run -d --name boxone -v /mnt/mys3bucket:/var/www/html lovelearnlinux/webserver:v1
+
+
