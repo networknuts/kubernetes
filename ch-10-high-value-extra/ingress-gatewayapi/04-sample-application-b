@@ -1,0 +1,69 @@
+1. Create another application 
+
+vim deployment-2.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  labels:
+    app: apache
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: apache
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      containers:
+      - name: nginx
+        image: lovelearnlinux/webserver:v1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-dep-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: apache
+  ports:
+    - port: 80
+      # By default and for convenience, the `targetPort` is set to
+      # the same value as the `port` field.
+      targetPort: 80
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane
+      # will allocate a port from a range (default: 30000-32767)
+
+### FILE END HERE
+
+kubectl apply -f deployment-2.yaml
+kubectl get deploy
+kubectl get rs
+kubectl get pods
+kubectl get svc
+
+2. Note down the "loadbalancer-ingress" value 
+kubectl describe svc webserver-dep-svc
+
+3. Try accessing this application by using loadbalancer-ingress in your browser
+
+4. Add another entry in ROUTE53 for this application
+
+rest.aloksrivastava.name == CNAME == loadbalancer-ingress
+
+5. You should be able to access new application on - rest.aloksrivastava.name

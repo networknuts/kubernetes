@@ -1,0 +1,305 @@
+gateway api
+=============
+
+Requirements:
+
+1. Kubernetes cluster on aws/azure/gcp
+2. Helm installed
+3. Kubectl
+
+-------------
+
+Step #1 - Application to deploy
+
+vim myapplication.yaml
+
+# file starts here
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-app-html
+  namespace: default
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>!! networknuts !!</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+          text-align: center;
+          padding: 60px 80px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 20px;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+          font-size: 3.5rem;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin-bottom: 20px;
+        }
+        p {
+          color: #666;
+          font-size: 1.2rem;
+        }
+        .emoji { font-size: 4rem; margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="emoji">👋</div>
+        <h1>Hello from NetworkNuts!!</h1>
+        <p>NGINX Gateway Fabric is working! 🚀</p>
+      </div>
+    </body>
+    </html>
+
+---
+# ============================================
+# Deployment - NGINX with custom HTML
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-app
+  namespace: default
+  labels:
+    app: hello-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-app
+  template:
+    metadata:
+      labels:
+        app: hello-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: html
+          configMap:
+            name: hello-app-html
+
+---
+# ============================================
+# Service
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-app-service
+  namespace: default
+spec:
+  selector:
+    app: hello-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+### file ends here
+
+Apply the file - 
+
+kubectl apply -f myapplication.yaml
+
+
+Step #2 - Setup cert-manager to automatically issue Let’s Encrypt SSL certificates for our domain, 
+enabling secure HTTPS traffic for the application.
+
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+
+It will install:
+Installs CRDs (Certificate, Issuer, ClusterIssuer)
+Runs controllers that talk to Let’s Encrypt
+Creates cert-manager namespace
+
+Step #3 - Create ClusterIssuer (Let’s Encrypt)
+
+vim clusterissuer.yaml
+
+## file starts here
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: your-email@example.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      # HTTP-01 challenge solver (most common)
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: main-gateway
+                namespace: nginx-gateway
+
+## file ends here
+
+Apply the file
+kubectl apply -f clusterissuer.yaml
+kubectl get clusterissuer
+
+Step #4 -  Set Up Gateway API Using NGINX Gateway Fabric
+
+## ONE - Install Gateway API CRDs. Not included in default Kubernetes
+
+# Install the standard channel Gateway API CRDs kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+
+Confirm:
+kubectl get crds | grep gateway
+
+## TWO - Install NGINX Gateway Fabric. We will use the NGINX Gateway Fabric Controller, which is now generally available (GA).
+
+helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+  --namespace nginx-gateway \
+  --create-namespace \
+  --version 2.4.0 \
+  --wait
+
+#Confirm
+
+kubectl get all -n nginx-gateway
+
+## THREE - Create GatewayClass. Create a gatewayclass.yaml file that points to the NGINX Gateway Fabric Controller.
+
+vim gatewayclass.yaml
+
+## file starts here
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway-fabric
+
+## file ends here
+
+kubectl apply -f gatewayclass.yaml
+
+## FOUR - Create Gateway
+The Gateway resource is linked to a GatewayClass. You can create multiple Gateways and attach them to the same GatewayClass.
+
+- Creating a Gateway provisions a new cloud load balancer, which is used to expose your application to the internet.
+- The Gateway file contains all network-level and TLS configuration, such as listeners and certificates.
+- Unlike Ingress, routing rules are not defined here. Gateway focuses only on traffic entry and security, while routing is handled separately using HTTPRoutes.
+- Create a gateway.yaml file
+
+vim gateway.yaml
+
+
+## file starts here
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: main-gateway
+  namespace: nginx-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  gatewayClassName: nginx
+  listeners:
+    # HTTP Listener
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: "style.aloksrivastava.name"
+      allowedRoutes:
+        namespaces:
+          from: All #All/Same
+
+## file ends here
+
+kubectl apply -f gateway.yaml
+kubectl -n nginx-gateway get gateway
+kubectl -n nginx-gateway describe gateway main-gateway
+
+
+#############
+#
+# In this setup, we simply add the annotation
+# cert-manager.io/cluster-issuer: letsencrypt-prod
+# to the Gateway resource.
+#
+# With this annotation:
+# cert-manager automatically creates an SSL certificate for the domain defined in the Gateway (for example, domain1.com).
+#
+# The certificate is stored in the Secret specified in the Gateway (for example, domain1-ssl).
+#
+# The Gateway then uses this Secret to enable HTTPS.
+#
+# This process applies to all domains defined in the Gateway file.
+#
+# If you already have a custom SSL certificate, you can manually create a Kubernetes Secret and reference it directly in the 
+# Gateway using certificateRef
+#
+############
+
+
+## FIVE - Create the HTTPRoute
+In this file, define the routing rules that determine where incoming traffic is forwarded.
+The HTTPRoute will route requests to the Kubernetes Service created in Phase 1.
+Create a httproute.yaml
+
+vim httproute.yaml
+
+## file starts here
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hello-app-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: nginx-gateway
+  hostnames:
+    - "style.aloksrivastava.name"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: hello-app-service
+          port: 80
+## file ends here
+
+kubectl apply -f httproute.yaml
+kubectl get httproute
+kubectl describe httproute hello-app-route
+
+#####
+Map your domain name with the gateway ELB in DNS
+You can access the application by visiting <your-domain>, which you configured in the Gateway and HTTPRoute files.
+#####
+

@@ -1,0 +1,63 @@
+1. Now Install nginx-ingress-controller on your kubernetes cluster
+   Installing using helm is the recommended way
+
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+kubectl create ns nginx-ingress
+helm install ingress-nginx ingress-nginx/ingress-nginx -n nginx-ingress
+kubectl -n nginx-ingress get svc
+kubectl get ingress
+
+Make sure both the deployments and services are working
+  
+2. Now create a ingress-resource to expose the application
+
+vim nginx-ingress.yaml
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: test.aloksrivastava.name
+    http:
+      paths:
+      - backend:
+          service:
+            name: nginx-dep-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  - host: rest.aloksrivastava.name
+    http:
+      paths:
+      - backend:
+          service:
+            name: webserver-dep-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+
+## save and exit
+
+kubectl apply -f nginx-ingress.yaml
+kubectl get ingress
+kubectl describe ingress nginx-ingress
+## Note down the address from the output and copy it
+
+3. Go to Route53 and create two CNAME records. This time both should point to "nginx-ingress" address from the describe command
+
+test.aloksrivastava.name == CNAME == <value of nginx-ingress address>
+rest.aloksrivastava.name == CNAME == <value of nginx-ingress address>
+
+
+
+
+

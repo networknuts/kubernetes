@@ -1,0 +1,75 @@
+KOPS 
+====
+<should have a domain access>
+
+1. Install kops
+
+#!/bin/bash
+curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+chmod +x kops
+sudo mv kops /usr/local/bin/kops
+
+2. Install aws-cli
+
+#!/bin/bash
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+3. Install kubectl
+
+#!/bin/bash
+sudo apt-get update -y
+# apt-transport-https may be a dummy package; if so, you can skip that package
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubectl
+
+
+4. Get secret/access keys for admin access using AWS Dashboard
+
+5. Authenticate your aws-cli with your aws account
+
+aws configure
+<supply aws access-key and aws-secret-key>
+
+6. Check with
+
+aws iam list-users
+
+7. Create s3 bucket with versioning enabled
+
+   aws s3 mb s3://nn-k8s-state-store --region ap-south-1
+   aws s3api put-bucket-versioning --bucket nn-k8s-state-store --versioning-configuration Status=Enabled
+
+8. Create k8s cluser - first use dry-run
+
+kops create cluster --state "s3://nn-k8s-state-store"  \
+--zones "ap-south-1a" --control-plane-count 3 \
+--control-plane-size=t2.medium   --node-count 3 \
+--node-size=t2.small --name test.aloksrivastava.name
+
+9. Check state of cluster creation
+
+  kops get cluster --state=s3://nn-k8s-state-store
+
+10. Create cluster, if happy
+
+  kops update cluster --name test.aloksrivastava.name --state=s3://nn-k8s-state-store --yes --admin
+
+11. Validate cluster creation (Wait for 8-10 min)
+
+  kops validate cluster --state "s3://nn-k8s-state-store" --name test.aloksrivastava.name
+
+12. Go to AWS dashboard and check EC2 instances / ASG / VPC / Route53
+
+13. Access cluster
+  kubectl get nodes
+  kubectl -n kube-system get pods
+
+14. Delete the cluster
+  kops delete cluster --state "s3://nn-k8s-state-store" --name test.aloksrivastava.name --yes

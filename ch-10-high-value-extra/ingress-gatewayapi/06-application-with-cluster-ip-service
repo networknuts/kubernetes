@@ -1,0 +1,157 @@
+1. Change your Application's service type to - ClusterIP
+
+vim deployment-1.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-dep-svc
+spec:
+#  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      # By default and for convenience, the `targetPort` is set to
+      # the same value as the `port` field.
+      targetPort: 80
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane
+      # will allocate a port from a range (default: 30000-32767)
+
+## FILE END HERE
+
+
+vim deployment-2.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  labels:
+    app: apache
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apache
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      containers:
+      - name: nginx
+        image: lovelearnlinux/webserver:v1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-dep-svc
+spec:
+#  type: LoadBalancer
+  selector:
+    app: apache
+  ports:
+    - port: 80
+      # By default and for convenience, the `targetPort` is set to
+      # the same value as the `port` field.
+      targetPort: 80
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane
+      # will allocate a port from a range (default: 30000-32767)
+
+## FILE END HERE
+
+kubectl apply -f deployment-1.yaml deployment-2.yaml
+kubectl get deploy
+kubectl get rs
+kubectl get pods
+
+2. Create a INGRESS RESOURCE
+
+vim nginx-ingress.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: test.aloksrivastava.name
+    http:
+      paths:
+      - backend:
+          service:
+            name: nginx-dep-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  - host: rest.aloksrivastava.name
+    http:
+      paths:
+      - backend:
+          service:
+            name: webserver-dep-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+
+## FILE END HERE
+
+kubectl apply -f nginx-ingress.yaml
+kubectl get ingress
+kubectl describe ingress nginx-ingress  ## NOTE down the address
+
+3. ADD entry in Route53
+
+test.aloksrivastava.name == CNAME == address of ingress
+rest.aloksrivastava.name == CNAME == address of ingress
+
+4. Try accessing rest.aloksrivastava.name and test.aloksrivastava.name
+Both exposed using "ClusterIP" service should be now available from outside world

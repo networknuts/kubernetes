@@ -1,0 +1,99 @@
+### STEP TO CREATE NGINX INGRESS CONTROLLER
+
+
+git clone https://github.com/nginxinc/kubernetes-ingress.git --branch v3.1.1
+cd kubernetes-ingress/deployments/
+kubectl apply -f common/ns-and-sa.yaml
+kubectl apply -f rbac/rbac.yaml
+kubectl apply -f rbac/ap-rbac.yaml
+kubectl apply -f rbac/apdos-rbac.yaml
+kubectl apply -f common/nginx-config.yaml
+kubectl apply -f common/ingress-class.yaml
+kubectl apply -f common/crds/k8s.nginx.org_virtualservers.yaml
+kubectl apply -f common/crds/k8s.nginx.org_virtualserverroutes.yaml
+kubectl apply -f common/crds/k8s.nginx.org_transportservers.yaml
+kubectl apply -f common/crds/k8s.nginx.org_policies.yaml
+kubectl apply -f common/crds/k8s.nginx.org_globalconfigurations.yaml
+kubectl apply -f daemon-set/nginx-ingress.yaml
+kubectl get ns
+kubectl -n nginx-ingress get ds
+kubectl -n nginx-ingress get pods
+
+#try accessing a node IP using browser - you will get 404 nginx error as request is taken by
+#nginx controller
+
+#let create a application now
+
+# vim petclinic.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: petclinic
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic
+  namespace: petclinic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: petclinic
+  template:
+    metadata:
+      labels:
+        app: petclinic
+    spec:
+      containers:
+      - name: pet
+        image: lovelearnlinux/webserver:v1
+        ports:
+        - containerPort: 80
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-svc
+  namespace: petclinic
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: petclinic
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: petclinic-ingress
+  namespace: petclinic
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: petclinic.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: petclinic-svc
+            port:
+              number: 80
+
+### save and exit
+
+#since we don't have DNS here. Modify your workers /etc/hosts
+<ip-of-worker> petclinic.example.com
+
+#now try doing a - curl http://petclinic.example.com from worker
+## it should work
+####

@@ -1,0 +1,175 @@
+== CANARY DEPLOYMENT ==
+
+Step #1 - Make sure your nginx ingress controller is installed
+
+Step #2 - Create MAIN deployment with service - main-application.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-v1
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: echo
+    version: v1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: echo
+        version: v1
+    spec:
+      containers:
+        - name: echo
+          image: "docker.io/lovelearnlinux/webserver:v1"
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 80
+
+### FILE END HERE
+
+kubectl apply -f main-application.yaml
+
+Step #3 - Create MAIN ingress for main application - main-ingress.yaml
+
+---
+kind: Ingress
+metadata:
+  name: main-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: test.aloksrivastava.name
+    http:
+      paths:
+      - backend:
+          service:
+            name: echo-v1
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+
+### FILE END HERE
+
+kubectl apply -f main-ingress.yaml
+
+Step #4 - Create CANARY deployment with service - canary-application.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-v2
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: echo
+    version: v2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: echo
+        version: v2
+    spec:
+      containers:
+        - name: echo
+          image: "docker.io/lovelearnlinux/webserver:v2"
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 80
+
+### FILE END HERE
+
+kubectl apply -f canary-application.yaml
+
+Step #5 - Create CANARY ingress for canary application - canary-ingress.yaml
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "30"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: test.aloksrivastava.name
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: echo-v2
+            port:
+              number: 80
+
+### FILE END HERE
+
+kubectl apply -f canary-ingress.yaml
+
+Step #6 - Create DNS CNAME entry in the zone file
+
+test.aloksrivastava.name === CNAME === value of nginx-ingress-controller
+
+<< kubectl -n nginx-ingress get svc >>
+
+Step #7 - Test running a for loop
+
+vim test-canary.sh
+
+#!/bin/bash
+for i in $(seq 1 100);
+do
+    curl "http://test.aloksrivastava.name"
+done
+
+## FILE END HERE
+
+sh test-canary.sh
+
+
+
+
