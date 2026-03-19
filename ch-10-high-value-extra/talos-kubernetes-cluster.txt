@@ -1,0 +1,195 @@
+Talos Linux runs completely detached from everything. It is not possible to SSH. But not even that, the resources have to be defined. If you don’t attach the drives, the system can’t even detect it. It uses only API endpoints. This essentially means that the only way to communicate with the system is through an API, and also, the only way it knows about its own resources are also through the API.
+
+Advantanges of using Talos Linux
+
+Enhanced Security: By design, Talos eliminates unnecessary components, package managers, and SSH access, significantly reducing the potential attack surface and the number of Common Vulnerabilities and Exposures (CVEs) compared to general-purpose operating systems.
+
+Immutability and Consistency: The operating system is read-only and immutable, which prevents configuration drift and ensures consistency across all nodes. This predictability simplifies debugging and management and supports GitOps methodologies.
+
+Simplified Operations: Management of the OS, including configuration changes and updates, is done entirely through a unified API (accessible via the talosctl CLI tool), eliminating manual intervention via SSH and simplifying automation.
+
+Declarative Configuration: All settings are defined in a single YAML configuration file, making infrastructure management entirely declarative and reproducible.
+
+Streamlined Upgrades: Talos offers a simple, automated upgrade process for both the operating system and Kubernetes components, often using a dual disk image scheme for reliable rollbacks.
+
+Minimal Footprint: Its small size and single-purpose design make it efficient and well-suited for various environments, including edge deployments and bare metal servers
+
+
+===============
+On workstation
+===============
+
+=== Install talosctl
+
+curl -sL https://talos.dev/install | sh
+
+# talosctl get disks --insecure --nodes 10.0.0.100
+
+
+=== Install kubectl
+
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg 
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list 
+sudo apt-get update
+sudo apt-get install -y kubectl
+
+
+==========
+Talos manager
+==========
+
+Boot the machine using talos and set
+Hostname = manager
+IP of host only interface = 10.0.0.100/8
+Gateway = 8.8.8.8
+NTP = in.pool.ntp.org
+
+==========
+Talos nodes
+==========
+
+Hostname = nodeone
+IP = 10.0.0.1/8
+Gateway = 8.8.8.8
+NTP = in.pool.ntp.org
+
+Hostname = nodetwo
+IP = 10.0.0.2/8
+Gateway = 8.8.8.8
+NTP = in.pool.ntp.org
+
+
+============
+Generate configuration on your workstation and push it to the node.
+============
+
+export CONTROL_PLANE_IP=10.0.0.100
+export WORKER_IP=("10.0.0.1" "10.0.0.2")
+talosctl get disks --insecure --nodes $CONTROL_PLANE_IP #note down disk - sda/vda
+
+#Generate Cluster Configuration
+
+export CLUSTER_NAME=networknuts
+export DISK_NAME=sda
+
+talosctl gen config $CLUSTER_NAME https://$CONTROL_PLANE_IP:6443 --install-disk /dev/$DISK_NAME
+
+#This will create 3 files
+
+controlplane.yaml - configuration for control plane nodes
+worker.yaml -  configuration for worker nodes
+talosconfig - configuration for the talosctl client
+
+##########
+Apply Configuration
+##########
+
+#1 - Configure Control Plane
+
+talosctl apply-config --insecure --nodes $CONTROL_PLANE_IP --file controlplane.yaml
+
+#2 - Configure endpoints of cluster
+
+talosctl --talosconfig=./talosconfig config endpoints $CONTROL_PLANE_IP
+
+#3 - Bootstrap your etcd 
+
+talosctl bootstrap --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig
+
+#4 - get config file
+
+talosctl kubeconfig --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig
+
+#5 - check cluster health
+
+talosctl --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig health
+
+## check cluster nodes
+kubectl get nodes
+
+#### 
+Start worker machines
+####
+
+nodeone = 10.0.0.1/8
+nodetwo = 10.0.0.2/8
+
+for ip in "${WORKER_IP[@]}"; do
+    echo "Applying config to worker node: $ip"
+    talosctl apply-config --insecure --nodes "$ip" --file worker.yaml
+done
+
+### Check in console of worker machines
+### You will see kubelet as Healthy
+
+### check nodes status again from workstation
+
+kubectl get nodes
+kubectl -n kube-system get pods
+
+###
+REMEMBER - In Talos Linux, etcd is not run as a Kubernetes pod (like in kubeadm deployments), but rather as a system service managed directly by Talos (machined) on the control plane 
+###
+
+talosctl -n <control-plane-IP> service etcd
+talosctl -n <control-plane-IP> etcd health
+
+################
+##############
+Create a pod to check
+
+vim secure-pod.yaml
+
+---
+# secure-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-app
+  namespace: default
+spec:
+  # Pod-level security context
+  securityContext:
+    # Run all containers as this user
+    runAsUser: 1000
+    runAsGroup: 1000
+    # Set the filesystem group for mounted volumes
+    fsGroup: 1000
+    # Do not allow any container to run as root
+    runAsNonRoot: true
+  containers:
+    - name: app
+      image: docker.io/demisto/iputils:1.0.0.62867
+      command: [ "tail", "-f", "/dev/null" ]
+      # Container-level security context
+      securityContext:
+        # Make the root filesystem read-only
+        readOnlyRootFilesystem: true
+        # Do not allow privilege escalation
+        allowPrivilegeEscalation: false
+        # Drop all Linux capabilities
+        capabilities:
+          drop:
+            - ALL
+      # Provide a writable directory for temporary files
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: tmp
+      emptyDir: {}
+
+#file ends here
+
+###
+Deploy metric server
+###
+
+kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
