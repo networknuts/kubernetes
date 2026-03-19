@@ -1,18 +1,32 @@
-Talos Linux runs completely detached from everything. It is not possible to SSH. But not even that, the resources have to be defined. If you don’t attach the drives, the system can’t even detect it. It uses only API endpoints. This essentially means that the only way to communicate with the system is through an API, and also, the only way it knows about its own resources are also through the API.
+Talos Linux runs completely detached from everything. 
+It is not possible to SSH. But not even that, the resources have to be defined. 
+If you don’t attach the drives, the system can’t even detect it. 
+It uses only API endpoints. 
+This essentially means that the only way to communicate with the system is through an API, 
+and also, the only way it knows about its own resources are also through the API.
 
 Advantanges of using Talos Linux
 
-Enhanced Security: By design, Talos eliminates unnecessary components, package managers, and SSH access, significantly reducing the potential attack surface and the number of Common Vulnerabilities and Exposures (CVEs) compared to general-purpose operating systems.
+Enhanced Security: By design, Talos eliminates unnecessary components, package managers, and SSH access,
+significantly reducing the potential attack surface and the number of 
+Common Vulnerabilities and Exposures (CVEs) compared to general-purpose operating systems.
 
-Immutability and Consistency: The operating system is read-only and immutable, which prevents configuration drift and ensures consistency across all nodes. This predictability simplifies debugging and management and supports GitOps methodologies.
+Immutability and Consistency: The operating system is read-only and immutable, which prevents 
+configuration drift and ensures consistency across all nodes. This predictability simplifies
+debugging and management and supports GitOps methodologies.
 
-Simplified Operations: Management of the OS, including configuration changes and updates, is done entirely through a unified API (accessible via the talosctl CLI tool), eliminating manual intervention via SSH and simplifying automation.
+Simplified Operations: Management of the OS, including configuration changes and updates, 
+is done entirely through a unified API (accessible via the talosctl CLI tool), 
+eliminating manual intervention via SSH and simplifying automation.
 
-Declarative Configuration: All settings are defined in a single YAML configuration file, making infrastructure management entirely declarative and reproducible.
+Declarative Configuration: All settings are defined in a single YAML configuration file, 
+making infrastructure management entirely declarative and reproducible.
 
-Streamlined Upgrades: Talos offers a simple, automated upgrade process for both the operating system and Kubernetes components, often using a dual disk image scheme for reliable rollbacks.
+Streamlined Upgrades: Talos offers a simple, automated upgrade process for both the operating system 
+and Kubernetes components, often using a dual disk image scheme for reliable rollbacks.
 
-Minimal Footprint: Its small size and single-purpose design make it efficient and well-suited for various environments, including edge deployments and bare metal servers
+Minimal Footprint: Its small size and single-purpose design make it efficient and well-suited for 
+various environments, including edge deployments and bare metal servers
 
 
 ===============
@@ -132,7 +146,8 @@ kubectl get nodes
 kubectl -n kube-system get pods
 
 ###
-REMEMBER - In Talos Linux, etcd is not run as a Kubernetes pod (like in kubeadm deployments), but rather as a system service managed directly by Talos (machined) on the control plane 
+REMEMBER - In Talos Linux, etcd is not run as a Kubernetes pod (like in kubeadm deployments), 
+but rather as a system service managed directly by Talos (machined) on the control plane 
 ###
 
 talosctl -n <control-plane-IP> service etcd
