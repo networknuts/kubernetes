@@ -38,3 +38,10 @@ Step #5 - Use as a bind mount
 docker run -d --name boxone -v /mnt/mys3bucket:/var/www/html lovelearnlinux/webserver:v1
 
 
+########## ALTERNATIVE using aws configure
+
+#1 - Create S3 bucket with public read policy
+#2 - Install s3fs and aws-cli in your machine. Use "aws-configure"
+#3 - Create a directory to mount - mkdir /mnt/some-name
+#4 - s3fs your-bucket-name /mnt/some-name/ -o allow_other -o default_acl=public-read
+#5 - docker run -d --name boxone -v /mnt/some-name:/var/www/html lovelearnlinux/webserver:v1
