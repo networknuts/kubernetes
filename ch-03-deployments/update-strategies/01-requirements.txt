@@ -1,0 +1,29 @@
+### REQUIREMENTS FOR THESE LABS
+
+#1. Running Kubernetes Cluster
+
+#2. Install nginx ingress controller
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+#3. Install MetalLB for providing IP to load-balancer services
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.3/config/manifests/metallb-native.yaml
+
+#4. Create IP Pool
+
+vim ip-pool.yaml
+
+##file start here
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: cheap
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.10.0/24
+##file ends here
+
+kubectl apply -f ip-pool.yaml
+kubectl get svc -n ingress-nginx  #it should have external IP
