@@ -1,0 +1,88 @@
+Gateway - Separate VM with TWO nic
+=========
+
+1. Enable packet forwarding
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward = 1
+EOF
+
+# Apply sysctl params without reboot
+sudo sysctl --system
+
+2. Configure NAT rules
+
+Public interface = ens33
+Private interface = ens34 = 10.0.0.199
+
+sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
+
+sudo iptables -A FORWARD -i ens33 -o ens34 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+sudo iptables -A FORWARD -i ens34 -o ens33 -j ACCEPT
+
+sudo apt install iptables-persistent
+
+3. Secure SSH (optional but recommended)
+
+vim /etc/ssh/sshd_config
+
+PermitRootLogin no
+PasswordAuthentication no
+
+#setup ssh keys authentication only
+
+#restrict inbound traffic
+
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp # Only allow SSH
+sudo ufw enable
+
+
+4. Configure clients to use gateway (10.0.0.199) for accessing Internet / external networks
+
+Best is do it at the time of installing OS
+
+IP - 10.0.0.100 
+Gateway - 10.0.0.199
+DNS - 8.8.8.8
+
+Else
+
+ip route add default via 10.0.0.200 dev ens33
+
+#in case you want to reach some other network using Gateway
+
+ip route add 10.10.10.0/24 via 10.0.0.200
+
+
+You can append these lines in /etc/bash.bashrc
+
+
+OR
+
+create a file - vim /etc/netplan/01-myroutes-config.yaml
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens33:                  # Replace with your actual interface name
+      dhcp4: false
+      addresses:
+        - 10.0.0.100/8 # Replace with your desired Static IP and subnet mask
+      routes:
+        - to: default
+          via: 10.0.0.200 # Replace with your Default Gateway/Router IP
+      nameservers:
+        addresses:
+          - 8.8.8.8        # Replace with your primary DNS
+          - 1.1.1.1        # Replace with your secondary DNS
+
+
+#sudo netplan try
+#sudo netplan apply
+#sudo ip route show
+#sudo ip a s
+
