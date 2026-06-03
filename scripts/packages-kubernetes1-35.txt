@@ -1,4 +1,5 @@
 #!/bin/bash
+
 KUBERNETES_VERSION=v1.35
 CRIO_VERSION=v1.35
 
@@ -38,7 +39,7 @@ systemctl enable crio.service
 
 #### NEXT STEPS ON MANAGER
 # sudo kubeadm config images pull
-# sudo kubeadm init --apiserver-advertise-address 10.0.0.100 --pod-network-cidr 172.17.0.0/16
+# sudo kubeadm init --apiserver-advertise-address 10.0.0.101 --pod-network-cidr 172.17.0.0/16
 # READ - output and execute commands
 # Finally - install CNI - calico
 # kubectl apply -f https://docs.tigera.io/calico/latest/manifests/calico.yaml
