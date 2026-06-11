@@ -1,0 +1,46 @@
+=== On Workstation
+
+Install VSCode
+Install Extensions:
+  - Remote - SSH Extension
+  - Kubernetes 
+  - YAML
+
+Open command [F1] or ctrl+shift+p
+
+remote-ssh: open ssh configuration file
+  - select your file
+  - add these lines
+      Host bastion
+        HostName <BASTION_SERVER_PUBLIC_IP>
+        User <SSH_USERNAME>
+        IdentityFile ~/.ssh/id_rsa
+        LocalForward 127.0.0.1:6443 <K8S_CLUSTER_API_PRIVATE_IP>:6443
+
+[[ctrl w ]] - to save
+
+
+### Yaml support for Kubernetes
+
+Ctrl + Shift + P
+
+Search -  Preferences: Open User Settings (JSON)
+
+Append the lines in settings.json
+
+
+"yaml.schemas": {
+    "kubernetes": "*.yaml"
+}
+
+
+[[ ctrl w ]] for save
+reload vscode
+
+###Open a new VS code window and under Kubernetes extension ###connect to cluster
+
+click remote explorer
+  - select bastion - connect to host in current window
+
+
+  
