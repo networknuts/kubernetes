@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    name: nginx
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 80
+              preference:
+                matchExpressions:
+                - key: memory
+                  operator: In
+                  values:
+                  - large
+                  - medium
+            - weight: 20
+              preference:
+                matchExpressions:
+                - key: cpu
+                  operator: In
+                  values:
+                  - amd
+                  - i7
+      containers:
+      - name: boxone
+        image: docker.io/lovelearnlinux/webserver:v1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 70m
+            memory: 64Mi
+
