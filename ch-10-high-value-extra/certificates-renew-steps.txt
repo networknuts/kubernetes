@@ -1,0 +1,53 @@
+##########################
+### CERTIFICATES RENEW ###
+##########################
+
+
+
+#1 - Check list of certificates and their expiration dates
+
+sudo kubeadm certs check-expiration
+
+
+#2 Check admin user certificate expiration, extract and decode it
+
+cat ~/.kube/config | grep client-certificate-data | cut -f2 -d : | tr -d ' ' | base64 -d | openssl x509 -text -out - | grep "Not After"
+
+###################
+Renew certificates
+###################
+
+#3 Backup existing certificates
+
+sudo cp -R /etc/kubernetes /etc/kubernetes.backup
+
+#4 Renew all certificates
+
+sudo kubeadm certs renew all
+
+#5 Update your config file
+
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+#6 Restart manager components
+
+{
+kubectl -n kube-system delete pod -l 'component=kube-apiserver'
+kubectl -n kube-system delete pod -l 'component=kube-controller-manager'
+kubectl -n kube-system delete pod -l 'component=kube-scheduler'
+kubectl -n kube-system delete pod -l 'component=etcd'
+}
+
+#7 Check new expiration dates
+
+sudo kubeadm certs check-expiration
+
+###########################################################
+### During kubeadm upgrade, kubeadm automatically renews 
+### all certificates during the upgrade process.
+###########################################################
+
+
+
