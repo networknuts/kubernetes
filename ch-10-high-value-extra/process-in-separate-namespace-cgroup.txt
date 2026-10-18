@@ -1,0 +1,42 @@
+## Running Process inside a namespace with memory and cpu controlled using cgroups
+
+Terminal #1 
+
+Step #1
+The unshare tool allows a new process to run in detached namespaces. Open a terminal and create a new environment isolated by process IDs (--pid), filesystem mounts (--mount-proc), hostname (--uts), and network stack (--net)
+
+sudo unshare --fork --pid --mount-proc --uts --net /bin/bash
+
+#try changing hostname it will work
+
+hostname my-env
+
+Terminal #2
+
+Step #1
+
+Check existing cgroups #/sys/fs/cgroups/
+
+systemd-cgls
+
+Create a cgroup
+
+sudo mkdir /sys/fs/cgroup/my_isolated_process
+
+Restrict rocess to a maximum of 100MB of RAM
+echo "100M" | sudo tee /sys/fs/cgroup/my_isolated_process/memory.max
+
+
+Control use of CPU maximum of 50% of a single CPU core, allocate 50,000 microseconds out of a 100,000 microsecond
+echo "50000 100000" | sudo tee /sys/fs/cgroup/my_isolated_process/cpu.max
+
+
+Find the PID of your process
+ps aux | grep unshare
+
+Inject your process into the cgroup
+
+echo <PID> | sudo tee /sys/fs/cgroup/my_isolated_process/cgroup.procs
+
+
+
