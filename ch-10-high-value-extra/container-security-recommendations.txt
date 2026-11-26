@@ -1,8 +1,10 @@
 Drop Linux capabilities. Use --cap-drop=ALL and explicitly add back only what is needed (e.g., --cap-add=NET_BIND_SERVICE)
 
-Block privilege escalation. Always pass --security-opt=no-new-privileges so processes cannot gain extra rights via setuid binaries
+Block privilege escalation. Always pass --security-opt=no-new-privileges so processes cannot gain extra 
+rights via setuid binaries
 
-Never use --privileged. This disables almost all isolation and gives the container direct access to host devices and kernel modules
+Never use --privileged. This disables almost all isolation and gives the container direct access 
+to host devices and kernel modules
 
 Enforce a read-only root filesystem. Run with --read-only to stop attackers from modifying binaries or writing malware. Pair this with --tmpfs /tmp for temporary runtime files
 docker run --read-only --tmpfs /tmp alpine sh -c 'echo "whatever" > /tmp/file'
@@ -11,24 +13,38 @@ Apply kernel security profiles. Keep Docker’s default seccomp profile active a
 
 Run as a non-root user. Create a dedicated user in your Dockerfile and switch to it using the USER directive 
 
-The best way to avoid DoS attacks is by limiting resources. You can limit memory, CPU, maximum number of restarts (--restart=on-failure:<number_of_restarts>), maximum number of file descriptors (--ulimit nofile=<number>) and maximum number of processes (--ulimit nproc=<number>)
+The best way to avoid DoS attacks is by limiting resources. 
+You can limit memory, CPU, maximum number of restarts (--restart=on-failure:<number_of_restarts>), 
+maximum number of file descriptors (--ulimit nofile=<number>) and maximum number of processes (--ulimit nproc=<number>)
 
 docker run --ulimit nproc=4096:4096 nginx
 docker run --ulimit nproc=1024:2048 ubuntu
 
-The Linux kernel enforces nproc per user UID across the entire host, not per individual container. If multiple containers run as the same user (such as root or daemon), they share that process quota and can trigger resource temporarily unavailable errors if the combined process count exceeds the limit. To cap processes strictly per container, use the --pids-limit flag instead 
+The Linux kernel enforces nproc per user UID across the entire host, not per individual container. 
+If multiple containers run as the same user (such as root or daemon), 
+they share that process quota and can trigger resource temporarily unavailable errors if the 
+combined process count exceeds the limit. 
+To cap processes strictly per container, use the --pids-limit flag instead 
 
 docker run --pids-limit=200 nginx
 
 PS:
 ===
-It protects the host system. By default, Docker containers have no PID limit. A runaway loop or "fork bomb" inside an unrestricted container can exhaust the host machine's global PID table, freezing the entire server and preventing even administrators from opening a shell to fix it
+It protects the host system. By default, Docker containers have no PID limit. 
+A runaway loop or "fork bomb" inside an unrestricted container can exhaust the 
+host machine's global PID table, freezing the entire server and preventing even 
+administrators from opening a shell to fix it
 ===
 
 
-Use minimal, pinned base images. Choose distroless, alpine, or scratch images to strip out shells and package managers. Reference images by immutable SHA256 digests rather than mutable tags like :latest
+Use minimal, pinned base images. Choose distroless, alpine, or scratch images to 
+strip out shells and package managers. Reference images by immutable SHA256 digests 
+rather than mutable tags like :latest
 
-Use multi-stage builds. Keep compilers, build tools, and build-time secrets out of the final production image.
+Use multi-stage builds. Keep compilers, build tools, and build-time secrets out of 
+the final production image.
 
-Isolate container networks. Create custom bridge networks (docker network create) instead of relying on the default bridge, preventing unrelated containers from communicating laterally.
+Isolate container networks. Create custom bridge networks (docker network create) 
+instead of relying on the default bridge, preventing unrelated containers from 
+communicating laterally.
 
